@@ -1,0 +1,80 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 150 30% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 30% 12%;
+    --primary: 142 71% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 138 45% 96%;
+    --secondary-foreground: 150 30% 18%;
+    --muted: 140 20% 96%;
+    --muted-foreground: 150 10% 42%;
+    --accent: 45 93% 52%;
+    --accent-foreground: 40 60% 15%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 140 20% 90%;
+    --input: 140 20% 90%;
+    --ring: 142 71% 35%;
+    --radius: 1rem;
+  }
+  .dark {
+    --background: 150 25% 7%;
+    --foreground: 140 20% 96%;
+    --card: 150 22% 10%;
+    --card-foreground: 140 20% 96%;
+    --primary: 142 65% 45%;
+    --primary-foreground: 150 30% 8%;
+    --secondary: 150 18% 16%;
+    --secondary-foreground: 140 20% 96%;
+    --muted: 150 15% 15%;
+    --muted-foreground: 140 12% 62%;
+    --accent: 45 90% 55%;
+    --accent-foreground: 40 60% 12%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 150 15% 20%;
+    --input: 150 15% 20%;
+    --ring: 142 65% 45%;
+  }
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .dark .glass {
+    background: rgba(20, 30, 24, 0.6);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
