@@ -44,47 +44,58 @@ export function PlatformFeatures({ features }: Props) {
                             {/* Decorative Glow */}
                             <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-primary/10 blur-3xl transition-all duration-500 group-hover:scale-125" />
                             <div className="relative p-5">
-                                {/* Icon */}
-                                <div className={`flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br ${COLORS[feature.slug]} text-white shadow-xl`}>
-                                    <Icon size={30} />
+                                {/* Mobile Layout */}
+                                <div className="sm:hidden flex items-center gap-3">
+                                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${COLORS[feature.slug]} text-white shadow-xl`}>
+                                        <Icon size={22} />
+                                    </div>
+                                    <h3 className="text-2xl font-black tracking-tight text-gray-900 leading-tight">
+                                        {feature.title}
+                                    </h3>
                                 </div>
-                                {/* Title */}
-                                <h3 className="mt-4 text-3xl font-black tracking-tight text-gray-900">
-                                    {feature.title}
-                                </h3>
+                                {/* Desktop Layout */}
+                                <div className="hidden sm:block">
+                                    {/* Icon */}
+                                    <div className={`flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br ${COLORS[feature.slug]} text-white shadow-xl`}>
+                                        <Icon size={30} />
+                                    </div>
+                                    <h3 className="mt-4 text-3xl font-black tracking-tight text-gray-900">
+                                        {feature.title}
+                                    </h3>
+                                </div>
                                 {/* Description */}
                                 <p className="mt-3 max-w-lg text-base leading-6 text-gray-600">
                                     {feature.description}
                                 </p>
                                 {/* Highlights */}
-                                <div className="mt-5 flex flex-wrap gap-3">
+                                <div className="mt-5 flex flex-wrap gap-2 md:gap-3">
                                     {feature.slug === "mandi-bhav" && (
                                         <>
-                                            <span className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+                                            <span className="rounded-full bg-emerald-50 px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-emerald-700">
                                                 Live Prices
                                             </span>
-                                            <span className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+                                            <span className="rounded-full bg-emerald-50 px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-emerald-700">
                                                 Government Mandis
                                             </span>
-                                            <span className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+                                            <span className="rounded-full bg-emerald-50 px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-emerald-700">
                                                 Real-time Updates
                                             </span>
                                         </>
                                     )}
 
                                     {feature.slug === "anudan-yojna" && (
-                                            <>
-                                                <span className="rounded-full bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700">
-                                                    PM-Kisan
-                                                </span>
-                                                <span className="rounded-full bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700">
-                                                    State Schemes
-                                                </span>
-                                                <span className="rounded-full bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700">
-                                                    Subsidies
-                                                </span>
-                                            </>
-                                        )}
+                                        <>
+                                            <span className="rounded-full bg-amber-50 px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-amber-700">
+                                                PM-Kisan
+                                            </span>
+                                            <span className="rounded-full bg-amber-50 px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-amber-700">
+                                                State Schemes
+                                            </span>
+                                            <span className="rounded-full bg-amber-50 px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-amber-700">
+                                                Subsidies
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* CTA */}

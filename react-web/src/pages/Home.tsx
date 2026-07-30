@@ -31,42 +31,6 @@ export function Home() {
 
       <HeroCarousel />
       {/* <GlobalSearch /> */}
-      <div className="container relative z-10">
-        <div className="mb-3 grid grid-cols-2 gap-4 rounded-3xl border border-primary/10 bg-white/80 p-6 shadow-lg backdrop-blur md:grid-cols-4">
-          <div className="text-center">
-            <h3 className="text-3xl font-black text-primary">
-              500+
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Verified Brands
-            </p>
-          </div>
-          <div className="text-center">
-            <h3 className="text-3xl font-black text-primary">
-              25K+
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Products
-            </p>
-          </div>
-          <div className="text-center">
-            <h3 className="text-3xl font-black text-primary">
-              10K+
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Dealers
-            </p>
-          </div>
-          <div className="text-center">
-            <h3 className="text-3xl font-black text-primary">
-              28
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              States Covered
-            </p>
-          </div>
-        </div>
-      </div>
 
       <PlatformFeatures features={platformFeatures} />
 

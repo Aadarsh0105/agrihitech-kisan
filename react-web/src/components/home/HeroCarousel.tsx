@@ -114,6 +114,44 @@ export function HeroCarousel() {
             )}
           </div>
         </div>
+
+
+        <div className="mt-6 relative z-10">
+          <div className="mb-3 grid grid-cols-2 gap-4 rounded-3xl border border-primary/10 bg-white/80 p-5 md:p-6 shadow-md backdrop-blur md:grid-cols-4">
+            <div className="text-center">
+              <h3 className="text-2xl md:text-3xl font-black text-primary">
+                500+
+              </h3>
+              <p className="mt-1 md:mt-2 text-sm text-gray-600">
+                Verified Brands
+              </p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl md:text-3xl font-black text-primary">
+                25K+
+              </h3>
+              <p className="mt-1 md:mt-2 text-sm text-gray-600">
+                Products
+              </p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl md:text-3xl font-black text-primary">
+                10K+
+              </h3>
+              <p className="mt-1 md:mt-2 text-sm text-gray-600">
+                Dealers
+              </p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl md:text-3xl font-black text-primary">
+                28
+              </h3>
+              <p className="mt-1 md:mt-2 text-sm text-gray-600">
+                States Covered
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>);
 
