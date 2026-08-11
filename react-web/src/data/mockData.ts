@@ -15,9 +15,9 @@ const BANNER = "/0feba23c-6ead-4445-9e3f-f20e07dd649f.jpg";
 export const categories: Category[] = [
   {
     id: "c1",
-    slug: "seeds",
-    name: "Seeds",
-    nameHi: "बीज",
+    slug: "agricultural-seeds",
+    name: "Agricultural Seeds",
+    nameHi: "कृषि बीज",
     icon: "sprout",
     bannerImage: SEED_IMG,
     productCount: 1250,
@@ -45,8 +45,8 @@ export const categories: Category[] = [
 
   {
     id: "c2",
-    slug: "agriculture-machinery",
-    name: "Agriculture Machinery",
+    slug: "agricultural-machinery",
+    name: "Agricultural Machinery",
     nameHi: "कृषि मशीनरी",
     icon: "tractor",
     bannerImage: LOGO_SHEET,

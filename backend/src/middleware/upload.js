@@ -1,0 +1,32 @@
+const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
+const path = require("path");
+
+const getFolder = (req) => {
+  if (req.baseUrl.includes("banners")) return "banners";
+  if (req.baseUrl.includes("categories")) return "categories";
+  if (req.baseUrl.includes("products")) return "products";
+  if (req.baseUrl.includes("brands")) return "brands";
+  if (req.baseUrl.includes("auth")) return "users";
+  return "others";
+};
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: (req, file) => ({
+    folder: `your_app/${getFolder(req)}`,
+    allowed_formats: ["jpg", "png", "jpeg", "webp"],
+    // public_id: `${Date.now()}-${file.originalname}`,
+    public_id: `${Date.now()}-${path.parse(file.originalname).name}`,
+    transformation: [
+      { width: 1200, height: 600, crop: "limit" },
+      { quality: "auto" },
+    ],
+  }),
+});
+
+module.exports = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});

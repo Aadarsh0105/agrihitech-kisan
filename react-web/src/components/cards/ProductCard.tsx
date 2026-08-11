@@ -76,33 +76,94 @@ group-hover:-translate-y-1
       </Link>
 
       <div className="flex flex-1 flex-col p-3">
-        <Link to={`/products/${product.slug}`}>
-          <h3 className="line-clamp-2 text-lg md:text-lg font-bold leading-tight text-gray-900 transition-colors duration-300">
-            {tv(product.name, product.nameHi)}
-          </h3>
-        </Link>
 
-        <div className="mt-1 flex items-center justify-between">
-          <p className="text-xs font-bold uppercase tracking-wider text-primary">
-            {product.brandName}
-          </p>
-        </div>
+  {/* Top Content */}
+  <div className="flex-1">
 
-        <div className="my-2 border-t border-gray-100" />
-        <div className="flex justify-between items-center">
-          <div className="flex">
-            <span className="text-xl font-black text-gray-900">
-              {product.price ? `₹${product.price.toLocaleString("en-IN")}` : t("product.priceOnRequest")}
-            </span>
-          </div>
+    <Link to={`/products/${product.slug}`}>
+      <h3
+        className="
+          min-h-[56px]
+          line-clamp-2
+          text-lg
+          font-bold
+          leading-7
+          text-gray-900
+          transition-colors
+          duration-300
+        "
+      >
+        {tv(product.name, product.nameHi)}
+      </h3>
+    </Link>
 
-          <Link to={`/products/${product.slug}`} className="flex h-9 px-3 w-auto items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-emerald-600 text-sm font-semibold text-white
-            shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98]">
-            View
-            <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
-        </div>
-      </div>
+    <p
+      className="
+        mt-2
+        text-xs
+        font-bold
+        uppercase
+        tracking-wider
+        text-primary
+      "
+    >
+      {product.brandName}
+    </p>
+
+  </div>
+
+  {/* Divider */}
+  <div className="my-3 border-t border-gray-100" />
+
+  {/* Bottom */}
+  <div className="flex items-center justify-between">
+
+    <div>
+      <span className="text-lg md:text-xl font-black text-gray-900">
+        {product.price
+          ? `₹ ${product.price.toLocaleString("en-IN")}`
+          : t("product.priceOnRequest")}
+      </span>
+
+    </div>
+
+    <Link
+      to={`/products/${product.slug}`}
+      className="
+        flex
+        h-8
+        md:h-8
+        shrink-0
+        items-center
+        justify-center
+        gap-2
+        rounded-2xl
+        bg-gradient-to-r
+        from-primary
+        to-emerald-600
+        px-2.5
+        md:px-4
+        text-sm
+        font-semibold
+        text-white
+        shadow-lg
+        transition-all
+        duration-300
+        hover:-translate-y-0.5
+        hover:shadow-xl
+      "
+    >
+      View
+
+      <ArrowRight
+        size={18}
+        className="transition-transform duration-300 group-hover:translate-x-1"
+      />
+    </Link>
+
+  </div>
+
+</div>
     </motion.article>
   );
 }

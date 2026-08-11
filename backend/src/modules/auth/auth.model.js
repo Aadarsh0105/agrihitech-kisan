@@ -1,0 +1,124 @@
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+
+const userSchema = new mongoose.Schema({
+  mobile: { type: String, required: true, unique: true },
+
+  role: { type: String, enum: ["B2C", "B2B", "ADMIN"], default: "B2C" },
+
+  // 🔹 B2B fields
+  firmName: String,
+  proprietorName: String,
+  password: String,
+  categories: {
+    type: [String],
+    default: [],
+    validate: {
+      validator: function (v) {
+        return v.length <= 2;
+      },
+      message: "Maximum 2 categories allowed"
+    }
+  },
+
+  profileimage: {
+    type: String,
+    // required: true
+  },
+  public_id: {
+    type: String,
+    // required: true,
+  },
+
+  location: {
+    state: String,
+    district: String,
+    village: String,
+    pincode: String,
+
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point"
+    },
+    coordinates: {
+      type: [Number],
+      default: [0, 0]
+    }
+  },
+
+  isVerified: { type: Boolean, default: false },
+
+  // 🔥 NEW: Subscription Field
+  subscription: {
+    planId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subscription"
+    },
+
+    paymentStatus: {
+      type: String,
+      enum: ["PENDING", "PAID", "FAILED"],
+      default: "PENDING"
+    },
+
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
+    razorpaySignature: String,
+
+    amount: Number,
+
+    currency: {
+      type: String,
+      default: "INR"
+    },
+
+    startDate: Date,
+
+    endDate: Date,
+
+    isActive: {
+      type: Boolean,
+      default: false
+    }
+  },
+
+  trialUsed: {
+    type: Boolean,
+    default: false
+  },
+
+  // 🔥 DELETE REQUEST
+  deleteRequest: {
+
+    requested: {
+      type: Boolean,
+      default: false
+    },
+
+    reason: {
+      type: String,
+      default: ""
+    },
+
+    requestedAt: {
+      type: Date,
+      default: null
+    }
+  }
+
+}, { timestamps: true });
+
+// ✅ INDEX
+userSchema.index({ location: "2dsphere" });
+
+// 🔐 TOKEN
+userSchema.methods.generateAuthToken = function () {
+  return jwt.sign(
+    { id: this._id, role: this.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+};
+
+module.exports = mongoose.model("User", userSchema);

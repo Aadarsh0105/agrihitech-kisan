@@ -1,7 +1,6 @@
 import { api } from '../services/api';
 import { useAsync } from '../hooks/useAsync';
-import { useLanguage } from '../i18n/LanguageContext';
-import { categories, brands, platformFeatures, products } from '../data/mockData';
+import { platformFeatures, products } from '../data/mockData';
 import { Seo } from '../components/layout/Seo';
 import { Section } from '../components/ui/Section';
 import { HeroCarousel } from '../components/home/HeroCarousel';
@@ -14,22 +13,42 @@ import { NewsSection } from '../components/home/NewsSection';
 import { Link } from 'react-router-dom';
 import { MobileAppShowcase } from '../components/home/MobileAppShowcase';
 import { PlatformFeatures } from '../components/home/PlatformFeatures';
-
+import { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { fetchHomeData } from "../redux/home/homeSlice";
+import type {
+  Category,
+  Brand,
+  Banner,
+} from "../redux/home/homeTypes";
 export function Home() {
-  const { t } = useLanguage();
   const trending = useAsync(() => api.getTrendingProducts(), []);
-  const recent = useAsync(() => api.getRecentProducts(), []);
   const testimonials = useAsync(() => api.getTestimonials(), []);
   const news = useAsync(() => api.getNews(), []);
   const benefits = useAsync(() => api.getBenefits(), []);
+  const dispatch = useAppDispatch();
 
+  const { data } = useAppSelector(
+    (state) => state.home
+  );
+
+  useEffect(() => {
+    dispatch(fetchHomeData());
+  }, [dispatch]);
+const banners: Banner[] = data?.banners ?? [];
+
+const categories: Category[] =
+  data?.categories ?? [];
+
+  const brands: Brand[] =
+  data?.brands ?? [];
   return (
     <>
       <Seo
         title="Discover Agri Products & Nearest Dealers"
         description="AgriMandi is India's agricultural product discovery platform — browse verified brands, seeds, fertilizers, pesticides and find your nearest dealers instantly." />
 
-      <HeroCarousel />
+      <HeroCarousel banners={banners} />
       {/* <GlobalSearch /> */}
 
       <PlatformFeatures features={platformFeatures} />
@@ -41,9 +60,9 @@ export function Home() {
       >
         <div className="container">
           {/* Grid */}
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4 lg:gap-8">
-            {categories.map((category, index) => (
-              <CategoryCard key={category.id} category={category} index={index} />
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-4 lg:gap-8">
+            {categories.map((    category: Category, index: number) => (
+              <CategoryCard key={category._id} category={category} index={index} />
             ))}
           </div>
         </div>
@@ -68,7 +87,7 @@ export function Home() {
         subtitle="Discover India's most trusted agricultural products from leading brands."
         viewAllHref="/products"
       >
-        <ProductGrid products={products} loading={trending.loading}/>
+        <ProductGrid products={products} loading={trending.loading} />
       </Section>
 
       <MobileAppShowcase />

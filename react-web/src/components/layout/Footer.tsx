@@ -79,34 +79,6 @@ export function Footer() {
           </FooterCol>
         </div>
 
-        <div className="mt-10 rounded-2xl border border-border bg-card p-6 md:flex md:items-center md:justify-between md:gap-8">
-          <div>
-            <h3 className="font-display text-lg font-bold text-foreground">{t('footer.newsletter')}</h3>
-            <p className="text-sm text-muted-foreground">{t('footer.newsletterSub')}</p>
-          </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setDone(true);
-            }}
-            className="mt-4 flex gap-2 md:mt-0 md:w-96">
-            
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('footer.emailPlaceholder')}
-              className="h-11 flex-1 rounded-full border border-input bg-background px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={t('footer.emailPlaceholder')} />
-            
-            <Button type="submit">
-              <Send className="h-4 w-4" />
-              {done ? '✓' : t('footer.subscribe')}
-            </Button>
-          </form>
-        </div>
-
         <div className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row">
           <p>© {new Date().getFullYear()} AgriMandi. {t('footer.rights')}</p>
           <p>Made for Indian agriculture 🌱</p>

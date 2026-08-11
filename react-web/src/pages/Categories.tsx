@@ -1,10 +1,3 @@
-
-
-
-
-
-
-import React from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { categories } from '../data/mockData';
 import { Seo } from '../components/layout/Seo';
