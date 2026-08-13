@@ -1,48 +1,19 @@
-
-
-
-
-
-
-import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, LocateFixed, Loader2 } from 'lucide-react';
-import { api } from '../../services/api';
+import { LocateFixed, MapPin } from 'lucide-react';
 import type { Dealer } from '../../types';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { DealerCard } from '../cards/DealerCard';
 import { Button } from '../ui/Button';
 
-export function NearestDealers({ productId }: {productId: string;}) {
+interface Props {
+  dealers: Dealer[] | null;
+  loading: boolean;
+  hasLocation: boolean;
+  onUseLocation: () => void;
+}
+
+export function NearestDealers({ dealers, loading, hasLocation, onUseLocation }: Props) {
   const { t } = useLanguage();
-  const [dealers, setDealers] = useState<Dealer[] | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [usingLocation, setUsingLocation] = useState(false);
-
-  useEffect(() => {
-    api.getDealersForProduct(productId).then(setDealers);
-  }, [productId]);
-
-  const useMyLocation = () => {
-    if (!navigator.geolocation) return;
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
-        const sorted = await api.getDealersForProduct(productId, coords);
-        setDealers(sorted);
-        setUsingLocation(true);
-        setLocating(false);
-      },
-      async () => {
-        // Permission denied — fall back to default distance ordering.
-        const sorted = await api.getDealersForProduct(productId);
-        setDealers(sorted);
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  };
 
   return (
     <section id="dealers" className="scroll-mt-24">
@@ -53,30 +24,39 @@ export function NearestDealers({ productId }: {productId: string;}) {
               <MapPin className="h-6 w-6" />
             </span>
             <div>
-              <h2 className="font-display text-2xl font-bold text-foreground">{t('dealers.title')}</h2>
-              <p className="text-sm text-muted-foreground">{t('dealers.subtitle')}</p>
+              <h2 className="font-display text-2xl font-bold text-foreground">Available Near You</h2>
+              <p className="text-sm text-muted-foreground">
+                {hasLocation ? 'Sellers are ordered using your current location.' : 'Share your location to find the nearest sellers.'}
+              </p>
             </div>
           </div>
-          <Button variant={usingLocation ? 'secondary' : 'primary'} onClick={useMyLocation} disabled={locating}>
-            {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
-            {locating ? t('dealers.locating') : t('dealers.useLocation')}
+          <Button variant={hasLocation ? 'secondary' : 'primary'} onClick={onUseLocation} disabled={loading}>
+            <LocateFixed className={`h-4 w-4 ${loading ? 'animate-pulse' : ''}`} />
+            {loading ? t('dealers.locating') : hasLocation ? 'Refresh location' : t('dealers.useLocation')}
           </Button>
         </div>
 
-        {!dealers ?
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {Array.from({ length: 2 }).map((_, i) =>
-          <div key={i} className="h-56 animate-pulse rounded-2xl border border-border bg-card" />
-          )}
-          </div> :
-
-        <motion.div layout className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {dealers.map((d, i) =>
-          <DealerCard key={d.id} dealer={d} index={i} />
-          )}
+        {loading ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-56 animate-pulse rounded-2xl border border-border bg-card" />
+            ))}
+          </div>
+        ) : dealers?.length ? (
+          <motion.div layout className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {dealers.map((dealer, index) => (
+              <DealerCard key={dealer.id} dealer={dealer} index={index} />
+            ))}
           </motion.div>
-        }
+        ) : (
+          <div className="rounded-2xl border border-dashed border-primary/25 bg-white/70 px-5 py-10 text-center">
+            <MapPin className="mx-auto h-8 w-8 text-primary" />
+            <p className="mt-3 font-semibold text-foreground">
+              {hasLocation ? 'No subscribed sellers found for this category nearby.' : 'Location is required to find nearby sellers.'}
+            </p>
+          </div>
+        )}
       </div>
-    </section>);
-
+    </section>
+  );
 }

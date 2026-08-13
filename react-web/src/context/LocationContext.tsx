@@ -8,6 +8,8 @@ import {
 interface LocationContextType {
   city: string;
   state: string;
+  latitude: number | null;
+  longitude: number | null;
   loading: boolean;
   getCurrentLocation: () => void;
 }
@@ -22,6 +24,8 @@ export function LocationProvider({
 }) {
   const [city, setCity] = useState("Select Location");
   const [state, setState] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   const getCurrentLocation = () => {
@@ -32,6 +36,8 @@ export function LocationProvider({
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
+        setLatitude(latitude);
+        setLongitude(longitude);
 
         try {
           const response = await fetch(
@@ -69,6 +75,8 @@ export function LocationProvider({
       value={{
         city,
         state,
+        latitude,
+        longitude,
         loading,
         getCurrentLocation,
       }}

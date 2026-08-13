@@ -1,6 +1,6 @@
 import { api } from '../services/api';
 import { useAsync } from '../hooks/useAsync';
-import { platformFeatures, products } from '../data/mockData';
+import { platformFeatures } from '../data/mockData';
 import { Seo } from '../components/layout/Seo';
 import { Section } from '../components/ui/Section';
 import { HeroCarousel } from '../components/home/HeroCarousel';
@@ -21,8 +21,9 @@ import type {
   Brand,
   Banner,
 } from "../redux/home/homeTypes";
+import { getHomepageProducts } from '../services/product.service';
 export function Home() {
-  const trending = useAsync(() => api.getTrendingProducts(), []);
+  const trending = useAsync(getHomepageProducts, []);
   const testimonials = useAsync(() => api.getTestimonials(), []);
   const news = useAsync(() => api.getNews(), []);
   const benefits = useAsync(() => api.getBenefits(), []);
@@ -87,7 +88,7 @@ const categories: Category[] =
         subtitle="Discover India's most trusted agricultural products from leading brands."
         viewAllHref="/products"
       >
-        <ProductGrid products={products} loading={trending.loading} />
+        <ProductGrid products={trending.data} loading={trending.loading} />
       </Section>
 
       <MobileAppShowcase />

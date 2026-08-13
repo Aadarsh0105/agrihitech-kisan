@@ -1,87 +1,103 @@
-
-
-
-
-
-
-
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Heart, Bookmark, History, Languages, MapPin } from 'lucide-react';
-import { useLanguage } from '../i18n/LanguageContext';
-import { products } from '../data/mockData';
-import { indianStates } from '../data/mockData';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { ChevronRight, CircleHelp, FileText, LogOut, ShieldCheck, User } from 'lucide-react';
 import { Seo } from '../components/layout/Seo';
-import { ProductGrid } from '../components/products/ProductGrid';
-import { Select, Label } from '../components/ui/Input';
+import { useAsync } from '../hooks/useAsync';
+import api from '../api/axios';
+import {
+  clearSession,
+  getSessionUser,
+  notifyAuthChanged,
+  sessionUserName,
+  type SessionUser,
+} from '../services/auth-session';
 
-type Tab = 'wishlist' | 'saved' | 'recent';
+interface ProfileResponse {
+  success: boolean;
+  user: SessionUser;
+}
+
+const profileActions = [
+  { label: 'Help & Support', href: '/contact', icon: CircleHelp },
+  { label: 'Terms & Conditions', href: '/terms', icon: FileText },
+  { label: 'Privacy Policy', href: '/privacy-policy', icon: ShieldCheck },
+];
+
+async function getProfile() {
+  const { data } = await api.get<ProfileResponse>('/auth/me');
+  localStorage.setItem('auth_user', JSON.stringify(data.user));
+  notifyAuthChanged();
+  return data.user;
+}
 
 export function Profile() {
-  const { t, locale, setLocale } = useLanguage();
-  const [tab, setTab] = useState<Tab>('wishlist');
+  const navigate = useNavigate();
+  const storedUser = getSessionUser();
+  const profile = useAsync(getProfile, []);
+  const user = profile.data ?? storedUser;
 
-  const tabs: {id: Tab;label: string;icon: React.ReactNode;}[] = [
-  { id: 'wishlist', label: t('account.wishlist'), icon: <Heart className="h-4 w-4" /> },
-  { id: 'saved', label: t('account.saved'), icon: <Bookmark className="h-4 w-4" /> },
-  { id: 'recent', label: t('account.recent'), icon: <History className="h-4 w-4" /> }];
-
-
-  const lists: Record<Tab, typeof products> = {
-    wishlist: products.slice(0, 4),
-    saved: products.slice(2, 6),
-    recent: products.slice(4, 8)
+  const logout = () => {
+    clearSession();
+    navigate('/');
   };
+
+  if (profile.loading && !user) {
+    return <div className="container py-20 text-center text-muted-foreground">Loading profile...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <>
-      <Seo title="My Account" description="Manage your wishlist, saved products and preferences on AgriMandi." />
-      <div className="border-b border-border bg-secondary/30">
-        <div className="container py-8">
-          <h1 className="font-display text-3xl font-extrabold text-foreground">My Account</h1>
-        </div>
-      </div>
+      <Seo title="Profile" description="Manage your Agri HiTech Kisan account and support information." />
+      <div className="min-h-[70vh] bg-gradient-to-b from-emerald-50/80 via-background to-background py-10 sm:py-14">
+        <div className="container max-w-3xl">
+          <h1 className="mb-7 text-center font-display text-3xl font-extrabold text-foreground">Profile</h1>
 
-      <div className="container grid gap-6 py-8 lg:grid-cols-[280px_1fr]">
-        {/* preferences */}
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-            <h2 className="mb-4 font-display text-base font-bold">Preferences</h2>
-            <div className="space-y-4">
-              <div>
-                <Label><span className="inline-flex items-center gap-1.5"><Languages className="h-4 w-4 text-primary" /> {t('account.language')}</span></Label>
-                <Select value={locale} onChange={(e) => setLocale(e.target.value as 'en' | 'hi')}>
-                  <option value="en">English</option>
-                  <option value="hi">हिंदी</option>
-                </Select>
-              </div>
-              <div>
-                <Label><span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" /> {t('account.location')}</span></Label>
-                <Select>
-                  {indianStates.map((s) => <option key={s} value={s}>{s}</option>)}
-                </Select>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <div>
-          <div className="mb-6 flex gap-2 overflow-x-auto no-scrollbar">
-            {tabs.map((tb) =>
-            <button
-              key={tb.id}
-              type="button"
-              onClick={() => setTab(tb.id)}
-              className={`relative inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${tab === tb.id ? 'text-primary-foreground' : 'border border-border text-muted-foreground hover:text-foreground'}`}>
-              
-                {tab === tb.id && <motion.span layoutId="profile-tab" className="absolute inset-0 -z-10 rounded-full bg-primary" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />}
-                {tb.icon} {tb.label}
-              </button>
+          <section className="flex items-center gap-4 rounded-3xl border border-border bg-white p-5 shadow-soft-lg sm:p-7">
+            {user.profileimage ? (
+              <img src={user.profileimage} alt={sessionUserName(user)} className="h-20 w-20 rounded-full object-cover sm:h-24 sm:w-24" />
+            ) : (
+              <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-primary/10 text-primary sm:h-24 sm:w-24">
+                <User className="h-9 w-9" />
+              </span>
             )}
-          </div>
-          <ProductGrid products={lists[tab]} />
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate font-display text-2xl font-extrabold text-gray-900">{sessionUserName(user)}</h2>
+              <p className="mt-1 text-base text-gray-500">{user.mobile}</p>
+              <span className="mt-2 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{user.role}</span>
+            </div>
+          </section>
+
+          <section className="mt-7 overflow-hidden rounded-3xl border border-border bg-white p-5 shadow-soft-lg sm:p-7">
+            <h2 className="mb-3 font-display text-xl font-extrabold text-gray-900">Other Information</h2>
+            <div className="divide-y divide-gray-100">
+              {profileActions.map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => navigate(action.href)}
+                  className="flex w-full items-center gap-4 py-5 text-left text-base font-medium text-gray-800 transition hover:text-primary"
+                >
+                  <action.icon className="h-6 w-6 shrink-0 text-primary" />
+                  <span className="flex-1">{action.label}</span>
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={logout}
+                className="flex w-full items-center gap-4 py-5 text-left text-base font-medium text-gray-800 transition hover:text-red-600"
+              >
+                <LogOut className="h-6 w-6 shrink-0 text-primary" />
+                <span className="flex-1">Logout</span>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+          </section>
         </div>
       </div>
-    </>);
-
+    </>
+  );
 }

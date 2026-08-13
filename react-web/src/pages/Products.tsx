@@ -7,13 +7,13 @@ import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X } from 'lucide-react';
-import { api } from '../services/api';
 import { useAsync } from '../hooks/useAsync';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Seo } from '../components/layout/Seo';
 import { ProductGrid } from '../components/products/ProductGrid';
 import { ProductFilters, emptyFilters, type FilterState } from '../components/products/ProductFilters';
 import { Button } from '../components/ui/Button';
+import { getAllProducts } from '../services/product.service';
 
 export function Products() {
   const { t } = useLanguage();
@@ -42,7 +42,7 @@ export function Products() {
     [filters]
   );
 
-  const { data, loading } = useAsync(() => api.getProducts(query), [JSON.stringify(query)]);
+  const { data, loading } = useAsync(getAllProducts, [JSON.stringify(query)]);
 
   return (
     <>
@@ -56,20 +56,20 @@ export function Products() {
         </div>
       </div>
 
-      <div className="container grid gap-6 py-8 lg:grid-cols-[280px_1fr]">
+      <div className="container grid gap-6 py-8">
         {/* desktop filters */}
-        <aside className="hidden lg:block">
+        {/* <aside className="hidden lg:block">
           <div className="sticky top-32">
             <ProductFilters value={filters} onChange={setFilters} onClear={() => setFilters(emptyFilters)} />
           </div>
-        </aside>
+        </aside> */}
 
         {/* mobile filter trigger */}
-        <div className="lg:hidden">
+        {/* <div className="lg:hidden">
           <Button variant="outline" className="w-full" onClick={() => setMobileOpen(true)}>
             <SlidersHorizontal className="h-4 w-4" /> {t('filters.title')}
           </Button>
-        </div>
+        </div> */}
 
         <div>
           <ProductGrid products={data} loading={loading} emptyLabel={t('common.notFound')} />

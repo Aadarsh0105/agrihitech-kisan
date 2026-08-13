@@ -15,6 +15,10 @@ export function ProductCard({
   index = 0,
 }: Props) {
   const { t, tv } = useLanguage();
+  const productPath = `/products/${product.id}`;
+  const destination = localStorage.getItem("token")
+    ? productPath
+    : `/login?role=B2C&returnTo=${encodeURIComponent(productPath)}`;
 
   return (
     <motion.article initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -24,7 +28,7 @@ export function ProductCard({
       <div className="absolute inset-x-0 bottom-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-primary via-green-400 to-primary transition-transform duration-500 group-hover:scale-x-100" />
       {/* Image */}
       <Link
-        to={`/products/${product.slug}`}
+        to={destination}
         className="
     relative
     block
@@ -80,7 +84,7 @@ group-hover:-translate-y-1
   {/* Top Content */}
   <div className="flex-1">
 
-    <Link to={`/products/${product.slug}`}>
+    <Link to={destination}>
       <h3
         className="
           min-h-[56px]
@@ -128,7 +132,7 @@ group-hover:-translate-y-1
     </div>
 
     <Link
-      to={`/products/${product.slug}`}
+      to={destination}
       className="
         flex
         h-8

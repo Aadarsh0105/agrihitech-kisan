@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Search, Moon, Sun, User, Home, Boxes, Package, Newspaper, Phone, Info, Building2, ChevronRight } from "lucide-react";
+import { Menu, X, Search, Moon, Sun, User, Home, Boxes, Package, Newspaper, Phone, Info, Building2, ChevronRight, ChevronDown, LogOut, CircleHelp, FileText, ShieldCheck, Pencil } from "lucide-react";
 import { useLanguage } from '../../i18n/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { LanguageSwitch } from './LanguageSwitch';
 import type { TranslationKey } from '../../i18n/translations';
 import { LocationPicker } from './LocationPicker';
+import { AUTH_CHANGED_EVENT, clearSession, getSessionUser, sessionUserName } from '../../services/auth-session';
+import { EditUserProfileModal } from './EditUserProfileModal';
 
 const NAV: { key: TranslationKey; to: string }[] = [
   { key: "nav.home", to: "/" },
@@ -34,6 +36,9 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [sessionUser, setSessionUser] = useState(getSessionUser);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,6 +47,23 @@ export function Navbar() {
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    const syncSession = () => setSessionUser(getSessionUser());
+    window.addEventListener(AUTH_CHANGED_EVENT, syncSession);
+    window.addEventListener('storage', syncSession);
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncSession);
+      window.removeEventListener('storage', syncSession);
+    };
+  }, []);
+
+  const logout = () => {
+    clearSession();
+    setProfileOpen(false);
+    setMobileOpen(false);
+    navigate('/');
+  };
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,12 +103,73 @@ export function Navbar() {
           <button onClick={toggleTheme} className="hidden lg:grid h-11 w-11 place-items-center rounded-lg border border-gray-200 hover:bg-secondary transition">
             {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
           </button>
-          {/* Login */}
-          <Link to="/login" className="hidden lg:flex items-center gap-2 rounded-xl bg-primary px-4 h-11 text-white font-semibold shadow-md
-      hover:shadow-lg hover:bg-primary-700 transition">
-            <User size={18} />
-            {t("nav.login")}
-          </Link>
+          {sessionUser ? (
+            <div className="relative hidden lg:block">
+              <button
+                type="button"
+                onClick={() => setProfileOpen((open) => !open)}
+                className="flex h-11 items-center gap-2 rounded-xl bg-primary px-3 font-semibold text-white shadow-md transition hover:bg-primary-700 hover:shadow-lg"
+              >
+                {sessionUser.profileimage ? (
+                  <img src={sessionUser.profileimage} alt="" className="h-7 w-7 rounded-full object-cover" />
+                ) : (
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-white/20"><User size={16} /></span>
+                )}
+                <span className="max-w-28 truncate">{sessionUserName(sessionUser)}</span>
+                <ChevronDown size={15} />
+              </button>
+              <AnimatePresence>
+                {profileOpen ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    className="absolute right-0 mt-2 w-72 overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-xl"
+                  >
+                    <div className="border-b border-gray-100 px-3 py-2">
+                      <p className="truncate text-sm font-bold text-gray-900">{sessionUserName(sessionUser)}</p>
+                      <p className="text-xs text-gray-500">{sessionUser.mobile}</p>
+                    </div>
+                    {sessionUser.role === 'B2C' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileOpen(false);
+                          setEditProfileOpen(true);
+                        }}
+                        className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        <Pencil size={18} className="text-primary" /> Edit profile
+                        <ChevronRight size={16} className="ml-auto text-gray-400" />
+                      </button>
+                    ) : null}
+                    <Link to="/contact" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <CircleHelp size={18} className="text-primary" /> Help & Support
+                      <ChevronRight size={16} className="ml-auto text-gray-400" />
+                    </Link>
+                    <Link to="/terms" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <FileText size={18} className="text-primary" /> Terms & Conditions
+                      <ChevronRight size={16} className="ml-auto text-gray-400" />
+                    </Link>
+                    <Link to="/privacy-policy" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <ShieldCheck size={18} className="text-primary" /> Privacy Policy
+                      <ChevronRight size={16} className="ml-auto text-gray-400" />
+                    </Link>
+                    <button type="button" onClick={logout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50">
+                      <LogOut size={18} /> Logout
+                      <ChevronRight size={16} className="ml-auto text-red-300" />
+                    </button>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link to="/login" className="hidden lg:flex items-center gap-2 rounded-xl bg-primary px-4 h-11 text-white font-semibold shadow-md
+        hover:shadow-lg hover:bg-primary-700 transition">
+              <User size={18} />
+              {t("nav.login")}
+            </Link>
+          )}
           {/* Mobile */}
           <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden h-11 w-11 rounded-xl border border-gray-200 grid place-items-center">
             {mobileOpen ? <X /> : <Menu />}
@@ -187,16 +270,56 @@ export function Navbar() {
                     );
                   })}
                 </div>
-                {/* Login */}
-                <Link to="/login" onClick={() => setMobileOpen(false)} className="flex h-12 items-center 
-                justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-md">
-                  <User size={18} />
-                  {t("nav.login")}
-                </Link>
+                {sessionUser ? (
+                  <div className="space-y-1 border-t border-gray-100 pt-4">
+                    <div className="mb-2 rounded-xl bg-emerald-50 px-4 py-3">
+                      <p className="truncate font-bold text-gray-900">{sessionUserName(sessionUser)}</p>
+                      <p className="text-sm text-gray-500">{sessionUser.mobile}</p>
+                    </div>
+                    {sessionUser.role === 'B2C' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileOpen(false);
+                          setEditProfileOpen(true);
+                        }}
+                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-700 hover:bg-gray-100"
+                      >
+                        <Pencil size={19} className="text-primary" /> Edit profile <ChevronRight size={17} className="ml-auto" />
+                      </button>
+                    ) : null}
+                    <Link to="/contact" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-700 hover:bg-gray-100">
+                      <CircleHelp size={19} className="text-primary" /> Help & Support <ChevronRight size={17} className="ml-auto" />
+                    </Link>
+                    <Link to="/terms" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-700 hover:bg-gray-100">
+                      <FileText size={19} className="text-primary" /> Terms & Conditions <ChevronRight size={17} className="ml-auto" />
+                    </Link>
+                    <Link to="/privacy-policy" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-700 hover:bg-gray-100">
+                      <ShieldCheck size={19} className="text-primary" /> Privacy Policy <ChevronRight size={17} className="ml-auto" />
+                    </Link>
+                    <button type="button" onClick={logout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-red-600 hover:bg-red-50">
+                      <LogOut size={19} /> Logout <ChevronRight size={17} className="ml-auto" />
+                    </button>
+                  </div>
+                ) : (
+                  <Link to="/login" onClick={() => setMobileOpen(false)} className="flex h-12 items-center 
+                  justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-md">
+                    <User size={18} />
+                    {t("nav.login")}
+                  </Link>
+                )}
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+      {sessionUser ? (
+        <EditUserProfileModal
+          open={editProfileOpen}
+          user={sessionUser}
+          onClose={() => setEditProfileOpen(false)}
+          onUpdated={setSessionUser}
+        />
+      ) : null}
     </header>);
 }

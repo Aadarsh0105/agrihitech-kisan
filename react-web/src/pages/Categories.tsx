@@ -1,10 +1,12 @@
 import { useLanguage } from '../i18n/LanguageContext';
-import { categories } from '../data/mockData';
 import { Seo } from '../components/layout/Seo';
 import { CategoryCard } from '../components/cards/CategoryCard';
+import { useAsync } from '../hooks/useAsync';
+import { getPublicCategories } from '../services/category.service';
 
 export function Categories() {
   const { t } = useLanguage();
+  const categories = useAsync(getPublicCategories, []);
   return (
     <>
       <Seo title={t('nav.categories')} description="Browse all agricultural input categories on AgriMandi." />
@@ -15,8 +17,8 @@ export function Categories() {
         </div>
       </div>
       <div className="container py-8">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {categories.map((c, i) =>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {(categories.data ?? []).map((c, i) =>
           <CategoryCard key={c.id} category={c} index={i} />
           )}
         </div>

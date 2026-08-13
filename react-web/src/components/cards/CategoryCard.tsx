@@ -25,11 +25,15 @@ export function CategoryCard({
   index = 0,
 }: Props) {
   const { tv } = useLanguage();
+  const categoryPath = `/categories/${category._id ?? category.id ?? category.slug ?? ""}`;
+  const destination = localStorage.getItem("token")
+    ? categoryPath
+    : `/login?role=B2C&returnTo=${encodeURIComponent(categoryPath)}`;
 
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
       transition={{ duration: 0.45, delay: index * 0.05 }}>
-      <Link to={`/categories/${category.slug ?? category._id ?? category.id ?? ""}`} className="group block overflow-hidden rounded-3xl border border-gray-100
+      <Link to={destination} className="group block overflow-hidden rounded-3xl border border-gray-100
           bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:border-primary/20">
         <div className="relative overflow-hidden">
           <img src={category.bannerImage ?? category.image ?? ""} alt={category.name} className="h-28 sm:h-auto sm:aspect-[16/10] w-full object-cover

@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Layout } from './components/layout/Layout';
@@ -21,6 +21,15 @@ import { PrivacyPolicy, Terms } from './pages/LegalPage';
 import { NotFound } from './pages/NotFound';
 import { LocationProvider } from './context/LocationContext';
 import MandiBhav from './pages/MandiBhav';
+import { AdminRoot } from "./components/admin/AdminRoot";
+import { ProtectedRoute as AdminProtectedRoute } from "./components/admin/auth/ProtectedRoute";
+import { AdminLayout } from "./components/admin/layout/AdminLayout";
+import { Dashboard as AdminDashboard } from "./pages/admin/Dashboard";
+import { Banners as AdminBanners } from "./pages/admin/Banners";
+import { Categories as AdminCategories } from "./pages/admin/Categories";
+import { Brands as AdminBrands } from "./pages/admin/Brands";
+import { Products as AdminProducts } from "./pages/admin/Products";
+import { Subscriptions as AdminSubscriptions } from "./pages/admin/Subscriptions";
 
 export function App() {
   return (
@@ -29,6 +38,20 @@ export function App() {
         <LanguageProvider>
           <BrowserRouter>
             <Routes>
+              <Route path="/admin" element={<AdminRoot />}>
+                <Route path="login" element={<Navigate to="/login" replace />} />
+                <Route element={<AdminProtectedRoute />}>
+                  <Route element={<AdminLayout />}>
+                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="banners" element={<AdminBanners />} />
+                    <Route path="categories" element={<AdminCategories />} />
+                    <Route path="brands" element={<AdminBrands />} />
+                    <Route path="products" element={<AdminProducts />} />
+                    <Route path="subscriptions" element={<AdminSubscriptions />} />
+                  </Route>
+                </Route>
+              </Route>
               <Route element={<Layout />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/mandi-bhav" element={<MandiBhav />} />
@@ -43,7 +66,6 @@ export function App() {
                 <Route path="/brand/products" element={<Products />} />
                 <Route path="/brand/add-product" element={<AddProduct />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/profile" element={<Profile />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/news" element={<News />} />

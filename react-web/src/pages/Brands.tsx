@@ -2,16 +2,15 @@
 
 
 
-import React from 'react';
-import { api } from '../services/api';
 import { useAsync } from '../hooks/useAsync';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Seo } from '../components/layout/Seo';
 import { BrandCard } from '../components/cards/BrandCard';
+import { getPublicBrands } from '../services/brand.service';
 
 export function Brands() {
   const { t } = useLanguage();
-  const { data, loading } = useAsync(() => api.getBrands(), []);
+  const { data, loading } = useAsync(getPublicBrands, []);
 
   return (
     <>

@@ -19,7 +19,7 @@ router.post(
 );
 
 // 🔹 Get All
-router.get("/", verifyToken, productController.getAllProducts);
+router.get("/", productController.getAllProducts);
 
 // get all products for admin (with pagination, filters, etc.)
 router.get(

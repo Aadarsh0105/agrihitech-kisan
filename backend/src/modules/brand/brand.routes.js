@@ -16,7 +16,7 @@ router.post(
 );
 
 // 🔹 Get All Brands
-router.get("/", verifyToken, brandController.getAllBrands);
+router.get("/", brandController.getAllBrands);
 router.get("/my-brands", verifyToken, brandController.getMyBrands);
 router.get("/:id", brandController.getBrandsByCategory);
 

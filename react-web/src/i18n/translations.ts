@@ -20,7 +20,7 @@ export const translations = {
     'nav.about': 'About',
     'nav.contact': 'Contact',
     'nav.login': 'Login',
-    'nav.registerBrand': 'Register Brand',
+    'nav.registerBrand': 'Register',
     'nav.searchPlaceholder': 'Search products, brands, categories, crops…',
 
     'hero.searchProducts': 'Search Products',
@@ -115,7 +115,7 @@ export const translations = {
     'filters.clear': 'Clear filters',
     'filters.results': 'products found',
 
-    'registerBrand.title': 'Register Your Brand',
+    'registerBrand.title': 'Start your smart farming journey',
     'registerBrand.subtitle': "Can't find your brand? List it and start reaching farmers.",
     'registerBrand.submit': 'Submit Registration',
 

@@ -1,55 +1,76 @@
-
-
-
-
-
-
-
-
-
-
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import axios from 'axios';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Store } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { indianStates } from '../data/mockData';
 import { Seo } from '../components/layout/Seo';
-import { Input, Textarea, Select, Label } from '../components/ui/Input';
+import { Input, Select, Label } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import { FileDrop } from '../components/forms/FileDrop';
+import { useAsync } from '../hooks/useAsync';
+import { getPublicCategories } from '../services/category.service';
+import api from '../api/axios';
+import { notifyAuthChanged, type SessionUser } from '../services/auth-session';
 
 const schema = z.object({
-  brandName: z.string().min(2, 'Required'),
-  companyName: z.string().min(2, 'Required'),
-  gst: z.string().min(15, 'Enter valid GST').max(15),
-  pan: z.string().min(10, 'Enter valid PAN').max(10),
-  email: z.string().email('Invalid email'),
-  phone: z.string().min(10, 'Enter valid phone'),
-  website: z.string().url('Invalid URL').optional().or(z.literal('')),
-  address: z.string().min(4, 'Required'),
+  firmName: z.string().trim().min(2, 'Firm name is required'),
+  proprietorName: z.string().trim().min(2, 'Proprietor name is required'),
+  mobile: z.string().regex(/^\d{10}$/, 'Enter a valid 10-digit phone number'),
+  category: z.string().min(1, 'Select a category'),
   state: z.string().min(1, 'Select state'),
-  district: z.string().min(2, 'Required'),
-  description: z.string().min(10, 'Tell us more')
+  district: z.string().trim().min(2, 'District is required'),
+  village: z.string().trim().min(2, 'City or village is required'),
+  pincode: z.string().regex(/^\d{6}$/, 'Enter a valid 6-digit pincode'),
 });
 
 type FormValues = z.infer<typeof schema>;
 
+interface RegisterResponse {
+  message: string;
+  token: string;
+  user: SessionUser;
+}
+
+function apiError(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.error ?? error.response?.data?.message ?? error.message;
+  }
+  return error instanceof Error ? error.message : 'Registration failed';
+}
+
 export function RegisterBrand() {
   const { t } = useLanguage();
   const [submitted, setSubmitted] = useState(false);
+  const [requestError, setRequestError] = useState('');
+  const categories = useAsync(getPublicCategories, []);
   const {
-    register, handleSubmit, formState: { errors, isSubmitting }
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { category: '' },
+  });
 
   const onSubmit = async (values: FormValues) => {
-    // POST /api/brands — replace with real endpoint later.
-    await new Promise((r) => setTimeout(r, 800));
-    // eslint-disable-next-line no-console
-    console.log('register brand', values);
-    setSubmitted(true);
+    setRequestError('');
+    try {
+      const { category, ...registration } = values;
+      const { data } = await api.post<RegisterResponse>('/auth/register-b2b', {
+        ...registration,
+        categories: [category],
+      });
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('auth_user', JSON.stringify(data.user));
+      api.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+      notifyAuthChanged();
+      setSubmitted(true);
+    } catch (error) {
+      setRequestError(apiError(error));
+    }
   };
 
   if (submitted) {
@@ -57,68 +78,86 @@ export function RegisterBrand() {
       <div className="container py-20">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mx-auto max-w-md rounded-3xl border border-border bg-card p-10 text-center shadow-soft">
           <CheckCircle2 className="mx-auto h-14 w-14 text-primary" />
-          <h1 className="mt-4 font-display text-2xl font-bold">Registration submitted!</h1>
-          <p className="mt-2 text-muted-foreground">Our team will verify your brand and get back to you shortly.</p>
+          <h1 className="mt-4 font-display text-2xl font-bold">Registration successful!</h1>
+          <p className="mt-2 text-muted-foreground">Your business account has been created and you are now signed in.</p>
         </motion.div>
-      </div>);
-
+      </div>
+    );
   }
 
   return (
     <>
-      <Seo title={t('nav.registerBrand')} description="Register your agricultural brand on AgriMandi and reach farmers across India." />
-      <div className="container max-w-3xl py-10">
-        <div className="mb-8 flex items-start gap-3">
+      <Seo title={t('nav.registerBrand')} description="Register your agricultural business on AgriMandi and reach farmers across India." />
+      <div className="container max-w-2xl py-10">
+        <div className="mb-8 flex items-center gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground"><Store className="h-6 w-6" /></span>
           <div>
-            <h1 className="font-display text-3xl font-extrabold text-foreground">{t('registerBrand.title')}</h1>
-            <p className="mt-1 text-muted-foreground">{t('registerBrand.subtitle')}</p>
+            <h1 className="font-display text-2xl font-extrabold text-foreground">{t('registerBrand.title')}</h1>
+            {/* <p className="mt-1 text-muted-foreground">{t('registerBrand.subtitle')}</p> */}
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="rounded-3xl border border-border bg-card p-6 shadow-soft md:p-8">
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Brand Name" error={errors.brandName?.message}><Input {...register('brandName')} /></Field>
-            <Field label="Company Name" error={errors.companyName?.message}><Input {...register('companyName')} /></Field>
-            <Field label="GST Number" error={errors.gst?.message}><Input {...register('gst')} placeholder="22AAAAA0000A1Z5" /></Field>
-            <Field label="PAN" error={errors.pan?.message}><Input {...register('pan')} placeholder="ABCDE1234F" /></Field>
-            <Field label={t('common.email')} error={errors.email?.message}><Input type="email" {...register('email')} /></Field>
-            <Field label="Phone" error={errors.phone?.message}><Input {...register('phone')} /></Field>
-            <Field label="Website" error={errors.website?.message}><Input {...register('website')} placeholder="https://" /></Field>
-            <Field label="Address" error={errors.address?.message}><Input {...register('address')} /></Field>
-            <Field label={t('filters.state')} error={errors.state?.message}>
-              <Select {...register('state')}>
-                <option value="">{t('filters.all')}</option>
-                {indianStates.map((s) => <option key={s} value={s}>{s}</option>)}
+            <Field label="Firm name" error={errors.firmName?.message}>
+              <Input {...register('firmName')} />
+            </Field>
+
+            <Field label="Proprietor name" error={errors.proprietorName?.message}>
+              <Input {...register('proprietorName')} />
+            </Field>
+
+            <Field label="Phone number" error={errors.mobile?.message}>
+              <Input type="tel" inputMode="numeric" maxLength={10} {...register('mobile')} />
+            </Field>
+
+            <Field label="Category" error={errors.category?.message}>
+              <Select {...register('category')} disabled={categories.loading}>
+                <option value="">{categories.loading ? 'Loading categories...' : 'Select category'}</option>
+                {(categories.data ?? []).map((category) => (
+                  <option key={category.id} value={category.name}>{category.name}</option>
+                ))}
               </Select>
             </Field>
-            <Field label={t('filters.district')} error={errors.district?.message}><Input {...register('district')} /></Field>
+
+            <Field label="State" error={errors.state?.message}>
+              <Select {...register('state')}>
+                <option value="">Select state</option>
+                {indianStates.map((state) => <option key={state} value={state}>{state}</option>)}
+              </Select>
+            </Field>
+
+            <Field label="District" error={errors.district?.message}>
+              <Input {...register('district')} />
+            </Field>
+
+            <Field label="City / Village" error={errors.village?.message}>
+              <Input {...register('village')} />
+            </Field>
+
+            <Field label="Pincode" error={errors.pincode?.message}>
+              <Input inputMode="numeric" maxLength={6} {...register('pincode')} />
+            </Field>
           </div>
 
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <FileDrop label="Logo Upload" />
-            <FileDrop label="Banner Upload" />
-          </div>
+          {requestError ? <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{requestError}</p> : null}
 
-          <div className="mt-5">
-            <Field label="Description" error={errors.description?.message}><Textarea {...register('description')} /></Field>
-          </div>
-
-          <Button type="submit" size="lg" className="mt-6 w-full sm:w-auto" disabled={isSubmitting}>
+          <Button type="submit" size="lg" className="mt-6 w-full" disabled={isSubmitting || categories.loading}>
             {isSubmitting ? t('common.loading') : t('registerBrand.submit')}
           </Button>
         </form>
       </div>
-    </>);
-
+    </>
+  );
 }
 
-function Field({ label, error, children }: {label: string;error?: string;children: React.ReactNode;}) {
+function Field({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
       <Label>{label}</Label>
       {children}
-      {error && <p className="mt-1 text-xs font-medium text-destructive">{error}</p>}
-    </div>);
-
+      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+      {error ? <p className="mt-1 text-xs font-medium text-destructive">{error}</p> : null}
+    </div>
+  );
 }

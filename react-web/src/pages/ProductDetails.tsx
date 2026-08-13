@@ -8,8 +8,6 @@ import { motion } from 'framer-motion';
 import {
   BadgeCheck, Sprout, FileText, BookOpen, FileDown, Check, ChevronRight, MapPin } from
 'lucide-react';
-import { api } from '../services/api';
-import { categories } from '../data/mockData';
 import { useAsync } from '../hooks/useAsync';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Seo } from '../components/layout/Seo';
@@ -17,11 +15,22 @@ import { ProductGallery } from '../components/products/ProductGallery';
 import { NearestDealers } from '../components/products/NearestDealers';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { getProductById } from '../services/product.service';
+import { useLocation as useUserLocation } from '../context/LocationContext';
 
 export function ProductDetails() {
   const { slug } = useParams<{slug: string;}>();
   const { t, tv } = useLanguage();
-  const { data: product, loading } = useAsync(() => api.getProductBySlug(slug ?? ''), [slug]);
+  const { latitude, longitude, loading: locationLoading, getCurrentLocation } = useUserLocation();
+  const details = useAsync(
+    () => getProductById(
+      slug ?? '',
+      latitude !== null && longitude !== null ? { latitude, longitude } : undefined,
+    ),
+    [slug, latitude, longitude],
+  );
+  const product = details.data?.product ?? null;
+  const loading = details.loading;
 
   if (loading) {
     return <div className="container py-20 text-center text-muted-foreground">{t('common.loading')}</div>;
@@ -50,7 +59,7 @@ export function ProductDetails() {
         <nav className="container flex items-center gap-1.5 py-3 text-sm text-muted-foreground" aria-label="Breadcrumb">
           <Link to="/" className="hover:text-primary">{t('nav.home')}</Link>
           <ChevronRight className="h-3.5 w-3.5" />
-          <Link to={`/categories/${categories.find((c) => c.id === product.categoryId)?.slug ?? ''}`} className="hover:text-primary">{product.categoryName}</Link>
+          <Link to={`/categories/${product.categoryId}`} className="hover:text-primary">{product.categoryName}</Link>
           <ChevronRight className="h-3.5 w-3.5" />
           <span className="truncate font-medium text-foreground">{tv(product.name, product.nameHi)}</span>
         </nav>
@@ -164,7 +173,12 @@ export function ProductDetails() {
 
         {/* MOST IMPORTANT: nearest dealers */}
         <div className="mt-14">
-          <NearestDealers productId={product.id} />
+          <NearestDealers
+            dealers={details.data?.nearestDealers ?? null}
+            loading={details.loading || locationLoading}
+            hasLocation={latitude !== null && longitude !== null}
+            onUseLocation={getCurrentLocation}
+          />
         </div>
       </div>
     </>);
