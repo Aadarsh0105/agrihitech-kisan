@@ -30,6 +30,18 @@ import { Categories as AdminCategories } from "./pages/admin/Categories";
 import { Brands as AdminBrands } from "./pages/admin/Brands";
 import { Products as AdminProducts } from "./pages/admin/Products";
 import { Subscriptions as AdminSubscriptions } from "./pages/admin/Subscriptions";
+import { BusinessProtectedRoute } from './components/business/BusinessProtectedRoute';
+import { BusinessLayout } from './components/business/BusinessLayout';
+import { BusinessDashboard } from './pages/business/Dashboard';
+import { BusinessBrands } from './pages/business/Brands';
+import { BusinessProducts } from './pages/business/Products';
+import { BusinessSettings } from './pages/business/Settings';
+import { CompanyProtectedRoute } from './components/company/CompanyProtectedRoute';
+import { CompanyLayout } from './components/company/CompanyLayout';
+import { CompanyDashboard } from './pages/company/Dashboard';
+import { CompanyProducts } from './pages/company/Products';
+import { CompanyDealers } from './pages/company/Dealers';
+import { CompanySettings } from './pages/company/Settings';
 
 export function App() {
   return (
@@ -50,6 +62,24 @@ export function App() {
                     <Route path="products" element={<AdminProducts />} />
                     <Route path="subscriptions" element={<AdminSubscriptions />} />
                   </Route>
+                </Route>
+              </Route>
+              <Route path="/business" element={<BusinessProtectedRoute />}>
+                <Route element={<BusinessLayout />}>
+                  <Route index element={<Navigate to="dashboard" replace />} />
+                  <Route path="dashboard" element={<BusinessDashboard />} />
+                  <Route path="products" element={<BusinessProducts />} />
+                  <Route path="brands" element={<BusinessBrands />} />
+                  <Route path="settings" element={<BusinessSettings />} />
+                </Route>
+              </Route>
+              <Route path="/company" element={<CompanyProtectedRoute />}>
+                <Route element={<CompanyLayout />}>
+                  <Route index element={<Navigate to="dashboard" replace />} />
+                  <Route path="dashboard" element={<CompanyDashboard />} />
+                  <Route path="products" element={<CompanyProducts />} />
+                  <Route path="dealers" element={<CompanyDealers />} />
+                  <Route path="settings" element={<CompanySettings />} />
                 </Route>
               </Route>
               <Route element={<Layout />}>

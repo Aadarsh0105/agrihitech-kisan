@@ -1,10 +1,11 @@
 export interface SessionUser {
   _id: string;
   mobile: string;
-  role: 'B2C' | 'B2B' | 'ADMIN';
+  role: 'B2C' | 'B2B' | 'ADMIN' | 'COMPANY';
   firmName?: string;
   proprietorName?: string;
   profileimage?: string;
+  categories?: string[];
 }
 
 export const AUTH_CHANGED_EVENT = 'auth-session-changed';

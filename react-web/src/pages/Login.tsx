@@ -12,7 +12,7 @@ import { useAppDispatch } from '../redux/store';
 import { hydrateToken } from '../redux/admin/authSlice';
 import { notifyAuthChanged } from '../services/auth-session';
 
-type LoginRole = 'B2C' | 'B2B' | 'ADMIN';
+type LoginRole = 'B2C' | 'B2B' | 'ADMIN' | 'COMPANY';
 
 interface AuthUser {
   _id: string;
@@ -28,13 +28,15 @@ interface AuthResponse {
 const roles: Array<{ value: LoginRole; label: string; description: string }> = [
   { value: 'B2C', label: 'Customer', description: 'B2C' },
   { value: 'B2B', label: 'Business', description: 'B2B' },
-  { value: 'ADMIN', label: 'Admin', description: 'Admin' },
+  // { value: 'ADMIN', label: 'Admin', description: 'Admin' },
+  { value: 'COMPANY', label: 'Company', description: 'Company' },
 ];
 
 const destinationByRole: Record<LoginRole, string> = {
   B2C: '/',
-  B2B: '/brand',
+  B2B: '/business/dashboard',
   ADMIN: '/admin/dashboard',
+  COMPANY: '/company/dashboard',
 };
 
 function getErrorMessage(error: unknown) {
@@ -55,7 +57,7 @@ export function Login() {
     ? requestedReturnTo
     : null;
   const [role, setRole] = useState<LoginRole>(
-    requestedRole === 'B2B' || requestedRole === 'ADMIN' ? requestedRole : 'B2C',
+    requestedRole === 'B2B' || requestedRole === 'ADMIN' || requestedRole === 'COMPANY' ? requestedRole : 'B2C',
   );
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
@@ -69,6 +71,15 @@ export function Login() {
     setLoading(true);
 
     try {
+      if (role === 'COMPANY') {
+        const companyUser: AuthUser = { _id: 'company-session', mobile, role: 'COMPANY' };
+        localStorage.setItem('token', 'company-session');
+        localStorage.setItem('auth_user', JSON.stringify(companyUser));
+        localStorage.removeItem('ahk_admin_token');
+        notifyAuthChanged();
+        navigate(returnTo ?? destinationByRole.COMPANY, { replace: true });
+        return;
+      }
       if (!otpSent) {
         await api.post('/auth/send-otp', { mobile, role });
         setOtpSent(true);
@@ -122,7 +133,7 @@ export function Login() {
             <p className="text-sm text-muted-foreground">Choose how you want to access AgriMandi</p>
           </div>
 
-          <div className="mb-5 grid grid-cols-3 gap-2" aria-label="Account type">
+          <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label="Account type">
             {roles.map((item) => (
               <button
                 key={item.value}
@@ -157,7 +168,7 @@ export function Login() {
               />
             </div>
 
-            {otpSent ? (
+            {otpSent && role !== 'COMPANY' ? (
               <div>
                 <Label>OTP</Label>
                 <Input
@@ -176,7 +187,7 @@ export function Login() {
             {error ? <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
 
             <Button type="submit" size="lg" className="w-full" disabled={loading}>
-              {loading ? 'Please wait...' : otpSent ? 'Verify OTP' : 'Send OTP'}
+              {loading ? 'Please wait...' : role === 'COMPANY' ? 'Continue to dashboard' : otpSent ? 'Verify OTP' : 'Send OTP'}
               {!loading ? <ArrowRight className="h-4 w-4" /> : null}
             </Button>
           </form>

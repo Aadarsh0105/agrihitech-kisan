@@ -1,10 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import axios from 'axios';
-import { motion } from 'framer-motion';
-import { CheckCircle2, Store } from 'lucide-react';
+import { Store } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { indianStates } from '../data/mockData';
 import { Seo } from '../components/layout/Seo';
@@ -29,7 +29,6 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 interface RegisterResponse {
-  message: string;
   token: string;
   user: SessionUser;
 }
@@ -43,7 +42,7 @@ function apiError(error: unknown) {
 
 export function RegisterBrand() {
   const { t } = useLanguage();
-  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
   const [requestError, setRequestError] = useState('');
   const categories = useAsync(getPublicCategories, []);
   const {
@@ -67,23 +66,11 @@ export function RegisterBrand() {
       localStorage.setItem('auth_user', JSON.stringify(data.user));
       api.defaults.headers.common.Authorization = `Bearer ${data.token}`;
       notifyAuthChanged();
-      setSubmitted(true);
+      navigate('/business/dashboard', { replace: true });
     } catch (error) {
       setRequestError(apiError(error));
     }
   };
-
-  if (submitted) {
-    return (
-      <div className="container py-20">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mx-auto max-w-md rounded-3xl border border-border bg-card p-10 text-center shadow-soft">
-          <CheckCircle2 className="mx-auto h-14 w-14 text-primary" />
-          <h1 className="mt-4 font-display text-2xl font-bold">Registration successful!</h1>
-          <p className="mt-2 text-muted-foreground">Your business account has been created and you are now signed in.</p>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <>
