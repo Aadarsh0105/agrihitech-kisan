@@ -1,0 +1,11 @@
+const router = require("express").Router();
+const controller = require("./news.controller");
+const upload = require("../../middleware/upload");
+const { verifyToken, isAdmin } = require("../../middleware/isAdmin");
+router.get("/", controller.list);
+router.get("/slug/:slug", controller.getBySlug);
+router.get("/:id", controller.getOne);
+router.post("/", verifyToken, isAdmin, upload.single("image"), controller.create);
+router.put("/:id", verifyToken, isAdmin, upload.single("image"), controller.update);
+router.delete("/:id", verifyToken, isAdmin, controller.remove);
+module.exports = router;

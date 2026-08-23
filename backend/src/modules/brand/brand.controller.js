@@ -157,6 +157,19 @@ exports.getMyBrands = async (req, res) => {
   }
 };
 
+exports.getMyBrandDealers = async (req, res) => {
+  try {
+    const dealers = await brandService.getMyBrandDealers(req.user._id);
+
+    res.json({
+      message: "Brand dealers fetched successfully",
+      dealers
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.getMyProductsByBrand = async (req, res) => {
   try {
     const data = await brandService.getMyProductsByBrand(

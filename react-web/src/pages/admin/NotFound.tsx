@@ -13,7 +13,7 @@ export function NotFound() {
         title="Page not found"
         message="This module does not exist in the admin console. Use the sidebar or global search to find what you need."
         action={
-        <Link to="/">
+        <Link to="/admin/dashboard">
             <Button variant="primary" size="sm">
               Back to dashboard
             </Button>

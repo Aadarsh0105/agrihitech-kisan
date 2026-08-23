@@ -40,6 +40,11 @@ interface ProductListResponse {
   products: ApiProduct[];
 }
 
+interface BrandProductsResponse {
+  brand: { _id: string; name: string; image?: string; category?: { _id: string; name: string } };
+  products: ApiProduct[];
+}
+
 interface ProductDetailsResponse {
   product: ApiProduct;
   nearestShops?: ApiNearestShop[];
@@ -135,6 +140,13 @@ export async function getProductsByCategory(categoryId: string): Promise<Product
   });
 
   return data.products.map(mapProduct);
+}
+
+export async function getProductsByBrand(brandId: string) {
+  const { data } = await api.get<BrandProductsResponse>(`/brands/${brandId}/products`, {
+    params: { page: 1, limit: 100 },
+  });
+  return { brand: data.brand, products: (data.products ?? []).map(mapProduct) };
 }
 
 export async function getProductById(

@@ -6,7 +6,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  BadgeCheck, Sprout, FileText, BookOpen, FileDown, Check, ChevronRight, MapPin } from
+  BadgeCheck, Sprout, FileText, BookOpen, FileDown, Check, ChevronRight, MapPin, MessageSquareText, X } from
 'lucide-react';
 import { useAsync } from '../hooks/useAsync';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -17,8 +17,12 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { getProductById } from '../services/product.service';
 import { useLocation as useUserLocation } from '../context/LocationContext';
+import { addEnquiry } from '../services/user-local.service';
 
 export function ProductDetails() {
+  const [enquiryOpen, setEnquiryOpen] = React.useState(false);
+  const [enquiryMessage, setEnquiryMessage] = React.useState('');
+  const [enquirySent, setEnquirySent] = React.useState(false);
   const { slug } = useParams<{slug: string;}>();
   const { t, tv } = useLanguage();
   const { latitude, longitude, loading: locationLoading, getCurrentLocation } = useUserLocation();
@@ -118,6 +122,9 @@ export function ProductDetails() {
                 <MapPin className="h-4 w-4" /> {t('product.findDealers')}
               </Button>
             </a>
+            <Button variant="outline" size="lg" className="mt-3 w-full sm:w-auto" onClick={() => { setEnquirySent(false); setEnquiryOpen(true); }}>
+              <MessageSquareText className="h-4 w-4" /> Send product enquiry
+            </Button>
 
             {/* downloads */}
             {product.downloads &&
@@ -181,6 +188,7 @@ export function ProductDetails() {
           />
         </div>
       </div>
+      {enquiryOpen ? <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setEnquiryOpen(false)}><div role="dialog" aria-modal="true" aria-label="Product enquiry" className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between gap-4"><div><h2 className="font-display text-xl font-bold">Product enquiry</h2><p className="mt-1 text-sm text-muted-foreground">Ask about {product.name}, pricing, or availability.</p></div><button onClick={() => setEnquiryOpen(false)} aria-label="Close"><X className="h-5 w-5" /></button></div>{enquirySent ? <div className="mt-6 rounded-xl bg-primary/10 px-4 py-5 text-center text-sm font-semibold text-primary">Your enquiry has been submitted.</div> : <><textarea value={enquiryMessage} onChange={(event) => setEnquiryMessage(event.target.value)} rows={5} placeholder="Write your enquiry" className="mt-5 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" /><Button className="mt-4 w-full" disabled={!enquiryMessage.trim()} onClick={() => { addEnquiry({ productId: product.id, productName: product.name, message: enquiryMessage.trim() }); setEnquirySent(true); setEnquiryMessage(''); }}>Submit enquiry</Button></>}</div></div> : null}
     </>);
 
 }

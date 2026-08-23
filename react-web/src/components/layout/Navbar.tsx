@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Search, Moon, Sun, User, Home, Boxes, Package, Newspaper, Phone, Info, Building2, ChevronRight, ChevronDown, LogOut, CircleHelp, FileText, ShieldCheck, Pencil } from "lucide-react";
+import { Menu, X, Search, Moon, Sun, User, Home, Boxes, Package, Newspaper, Phone, Info, Building2, ChevronRight, ChevronDown, LogOut, CircleHelp, FileText, ShieldCheck, Pencil, Heart, MessageSquareText } from "lucide-react";
 import { useLanguage } from '../../i18n/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { LanguageSwitch } from './LanguageSwitch';
@@ -131,6 +131,11 @@ export function Navbar() {
                       <p className="text-xs text-gray-500">{sessionUser.mobile}</p>
                     </div>
                     {sessionUser.role === 'B2C' ? (
+                      <>
+                      <Link to="/user/profile" onClick={() => setProfileOpen(false)} className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <User size={18} className="text-primary" /> My profile
+                        <ChevronRight size={16} className="ml-auto text-gray-400" />
+                      </Link>
                       <button
                         type="button"
                         onClick={() => {
@@ -142,6 +147,15 @@ export function Navbar() {
                         <Pencil size={18} className="text-primary" /> Edit profile
                         <ChevronRight size={16} className="ml-auto text-gray-400" />
                       </button>
+                      <Link to="/user/favourites" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <Heart size={18} className="text-primary" /> My favourites
+                        <ChevronRight size={16} className="ml-auto text-gray-400" />
+                      </Link>
+                      <Link to="/user/enquiries" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <MessageSquareText size={18} className="text-primary" /> My enquiries
+                        <ChevronRight size={16} className="ml-auto text-gray-400" />
+                      </Link>
+                      </>
                     ) : null}
                     <Link to="/contact" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
                       <CircleHelp size={18} className="text-primary" /> Help & Support
@@ -277,6 +291,10 @@ export function Navbar() {
                       <p className="text-sm text-gray-500">{sessionUser.mobile}</p>
                     </div>
                     {sessionUser.role === 'B2C' ? (
+                      <>
+                      <Link to="/user/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-700 hover:bg-gray-100">
+                        <User size={19} className="text-primary" /> My profile <ChevronRight size={17} className="ml-auto" />
+                      </Link>
                       <button
                         type="button"
                         onClick={() => {
@@ -287,6 +305,13 @@ export function Navbar() {
                       >
                         <Pencil size={19} className="text-primary" /> Edit profile <ChevronRight size={17} className="ml-auto" />
                       </button>
+                      <Link to="/user/favourites" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-700 hover:bg-gray-100">
+                        <Heart size={19} className="text-primary" /> My favourites <ChevronRight size={17} className="ml-auto" />
+                      </Link>
+                      <Link to="/user/enquiries" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-700 hover:bg-gray-100">
+                        <MessageSquareText size={19} className="text-primary" /> My enquiries <ChevronRight size={17} className="ml-auto" />
+                      </Link>
+                      </>
                     ) : null}
                     <Link to="/contact" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-700 hover:bg-gray-100">
                       <CircleHelp size={19} className="text-primary" /> Help & Support <ChevronRight size={17} className="ml-auto" />

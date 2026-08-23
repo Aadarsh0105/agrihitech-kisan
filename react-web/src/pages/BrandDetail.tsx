@@ -1,98 +1,15 @@
-
-
-
-
-
-import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { BadgeCheck, Globe, Mail, Phone, MapPin, Facebook, Instagram, Youtube } from 'lucide-react';
-import { api } from '../services/api';
-import { useAsync } from '../hooks/useAsync';
-import { useLanguage } from '../i18n/LanguageContext';
+import { Link, useParams } from 'react-router-dom';
+import { BadgeCheck, ChevronRight } from 'lucide-react';
 import { Seo } from '../components/layout/Seo';
 import { ProductGrid } from '../components/products/ProductGrid';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
-import { Section } from '../components/ui/Section';
+import { useAsync } from '../hooks/useAsync';
+import { getProductsByBrand } from '../services/product.service';
 
 export function BrandDetail() {
-  const { slug } = useParams<{slug: string;}>();
-  const { t, tv } = useLanguage();
-  const { data: brand, loading } = useAsync(() => api.getBrandBySlug(slug ?? ''), [slug]);
-  const { data: products, loading: pLoading } = useAsync(
-    () => api.getProducts({ brandSlug: slug }),
-    [slug]
-  );
-
-  if (loading) return <div className="container py-20 text-center text-muted-foreground">{t('common.loading')}</div>;
-  if (!brand)
-  return (
-    <div className="container py-24 text-center">
-        <h1 className="font-display text-2xl font-bold">{t('common.notFound')}</h1>
-        <Link to="/brands" className="mt-4 inline-block text-primary hover:underline">{t('common.backHome')}</Link>
-      </div>);
-
-
-  return (
-    <>
-      <Seo title={brand.name} description={tv(brand.description, brand.descriptionHi)} />
-
-      {/* banner */}
-      <div className="relative h-48 w-full overflow-hidden bg-primary-100 md:h-64">
-        {brand.banner && <img src={brand.banner} alt="" className="h-full w-full object-cover" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-      </div>
-
-      <div className="container">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative -mt-16 flex flex-col gap-4 rounded-3xl border border-border bg-card p-6 shadow-soft-lg md:flex-row md:items-center">
-          
-          <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-white">
-            <img src={brand.logo} alt={brand.name} className="h-20 w-20 object-cover" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="font-display text-2xl font-extrabold text-foreground md:text-3xl">{brand.name}</h1>
-              {brand.verified &&
-              <Badge variant="success"><BadgeCheck className="h-3.5 w-3.5" /> {t('brand.verified')}</Badge>
-              }
-            </div>
-            <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">{tv(brand.description, brand.descriptionHi)}</p>
-            <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
-              {brand.contact?.address &&
-              <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" /> {brand.contact.address}</span>
-              }
-              {brand.contact?.phone &&
-              <a href={`tel:${brand.contact.phone}`} className="inline-flex items-center gap-1.5 hover:text-primary"><Phone className="h-4 w-4 text-primary" /> {brand.contact.phone}</a>
-              }
-              {brand.contact?.email &&
-              <a href={`mailto:${brand.contact.email}`} className="inline-flex items-center gap-1.5 hover:text-primary"><Mail className="h-4 w-4 text-primary" /> {brand.contact.email}</a>
-              }
-            </div>
-          </div>
-          <div className="flex shrink-0 flex-col gap-2">
-            {brand.website &&
-            <a href={brand.website} target="_blank" rel="noreferrer">
-                <Button className="w-full"><Globe className="h-4 w-4" /> {t('brand.visitWebsite')}</Button>
-              </a>
-            }
-            <div className="flex gap-2">
-              {[Facebook, Instagram, Youtube].map((Icon, i) =>
-              <a key={i} href="#" aria-label="Social" className="grid h-10 w-10 place-items-center rounded-full border border-border text-muted-foreground transition hover:border-primary hover:text-primary">
-                  <Icon className="h-4 w-4" />
-                </a>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      <Section title={t('brand.allProducts')} subtitle={`${brand.productCount} ${t('brand.products')}`}>
-        <ProductGrid products={products} loading={pLoading} />
-      </Section>
-    </>);
-
+  const { slug: brandId = '' } = useParams();
+  const resource = useAsync(() => getProductsByBrand(brandId), [brandId]);
+  if (resource.loading) return <div className="container py-20 text-center text-muted-foreground">Loading...</div>;
+  if (!resource.data) return <div className="container py-24 text-center"><h1 className="font-display text-2xl font-bold">Brand not found</h1><Link to="/brands" className="mt-4 inline-block text-primary">Back to brands</Link></div>;
+  const { brand, products } = resource.data;
+  return <><Seo title={brand.name} description={`Explore products from ${brand.name}.`} /><div className="border-b border-border bg-secondary/30"><nav className="container flex items-center gap-2 py-3 text-sm text-muted-foreground"><Link to="/brands" className="hover:text-primary">Brands</Link><ChevronRight className="h-4 w-4" /><span className="font-medium text-foreground">{brand.name}</span></nav></div><div className="bg-gradient-to-br from-primary/10 via-background to-emerald-50/60"><div className="container flex flex-col items-center gap-5 py-10 text-center sm:flex-row sm:text-left">{brand.image ? <img src={brand.image} alt={brand.name} className="h-28 w-28 rounded-3xl border border-border bg-white object-contain p-3 shadow-soft" /> : <span className="grid h-28 w-28 place-items-center rounded-3xl bg-primary/10 text-primary"><BadgeCheck className="h-10 w-10" /></span>}<div><p className="text-sm font-semibold text-primary">Verified brand</p><h1 className="mt-1 font-display text-3xl font-extrabold">{brand.name}</h1><p className="mt-2 text-sm text-muted-foreground">{products.length} products available</p></div></div></div><div className="container py-10"><h2 className="mb-6 font-display text-2xl font-bold">Products by {brand.name}</h2><ProductGrid products={products} loading={false} emptyLabel="No products found for this brand." /></div></>;
 }

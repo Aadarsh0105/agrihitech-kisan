@@ -71,15 +71,6 @@ export function Login() {
     setLoading(true);
 
     try {
-      if (role === 'COMPANY') {
-        const companyUser: AuthUser = { _id: 'company-session', mobile, role: 'COMPANY' };
-        localStorage.setItem('token', 'company-session');
-        localStorage.setItem('auth_user', JSON.stringify(companyUser));
-        localStorage.removeItem('ahk_admin_token');
-        notifyAuthChanged();
-        navigate(returnTo ?? destinationByRole.COMPANY, { replace: true });
-        return;
-      }
       if (!otpSent) {
         await api.post('/auth/send-otp', { mobile, role });
         setOtpSent(true);
@@ -168,7 +159,7 @@ export function Login() {
               />
             </div>
 
-            {otpSent && role !== 'COMPANY' ? (
+            {otpSent ? (
               <div>
                 <Label>OTP</Label>
                 <Input
@@ -187,7 +178,7 @@ export function Login() {
             {error ? <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
 
             <Button type="submit" size="lg" className="w-full" disabled={loading}>
-              {loading ? 'Please wait...' : role === 'COMPANY' ? 'Continue to dashboard' : otpSent ? 'Verify OTP' : 'Send OTP'}
+              {loading ? 'Please wait...' : otpSent ? 'Verify OTP' : 'Send OTP'}
               {!loading ? <ArrowRight className="h-4 w-4" /> : null}
             </Button>
           </form>
@@ -201,6 +192,8 @@ export function Login() {
               Don't have an account ?{' '}
               <Link to="/register-brand" className="font-semibold text-primary hover:underline">{t('nav.registerBrand')}</Link>
             </p>
+          ) : role === 'COMPANY' ? (
+            <p className="mt-5 text-center text-sm text-muted-foreground">Don't have a company account? <Link to="/register-company" className="font-semibold text-primary hover:underline">Register company</Link></p>
           ) : null}
         </motion.div>
       </div>

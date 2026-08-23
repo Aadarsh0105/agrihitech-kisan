@@ -7,6 +7,7 @@ const streamifier = require("streamifier");
 const fs = require("fs");
 const axios = require("axios");
 const Product = require("../product/product.model");
+const Brand = require("../brand/brand.model");
 
 // 🔢 Generate 4 digit OTP
 const generateOTP = () => {
@@ -143,7 +144,8 @@ exports.registerB2B = async (data) => {
     district,
     village,
     pincode,
-    categories
+    categories,
+    dealerBrands
   } = data;
 
   const existing = await User.findOne({ mobile });
@@ -155,6 +157,22 @@ exports.registerB2B = async (data) => {
   // ✅ enforce max 2 categories
   if (categories && categories.length > 2) {
     throw new Error("Maximum 2 categories allowed");
+  }
+
+  const selectedBrandIds = [...new Set(Array.isArray(dealerBrands) ? dealerBrands : [])];
+  if (selectedBrandIds.length) {
+    const allowedCreators = await User.find({ role: { $in: ["ADMIN", "COMPANY"] } }).distinct("_id");
+    const selectedBrands = await Brand.find({
+      _id: { $in: selectedBrandIds },
+      createdBy: { $in: allowedCreators }
+    }).populate("category", "name");
+    if (selectedBrands.length !== selectedBrandIds.length) {
+      throw new Error("One or more selected brands are invalid");
+    }
+    const selectedCategories = (categories || []).map((name) => name.toLowerCase());
+    if (selectedCategories.length && selectedBrands.some((brand) => !selectedCategories.includes(brand.category?.name?.toLowerCase()))) {
+      throw new Error("Selected brands must belong to selected categories");
+    }
   }
 
   // 🔹 Get Lat/Lng from Pincode
@@ -193,6 +211,7 @@ exports.registerB2B = async (data) => {
     proprietorName,
 
     categories: categories || [],
+    dealerBrands: selectedBrandIds,
 
     location: {
       state,
@@ -213,6 +232,108 @@ exports.registerB2B = async (data) => {
   };
 };
 
+// Company Register
+exports.registerCompany = async (data) => {
+  const {
+    mobile,
+    companyName,
+    contactPerson,
+    email,
+    gstNumber,
+    address,
+    state,
+    district,
+    village,
+    pincode
+  } = data;
+
+  const requiredFields = {
+    mobile,
+    companyName,
+    contactPerson,
+    state,
+    district,
+    village,
+    pincode
+  };
+
+  const missingField = Object.entries(requiredFields)
+    .find(([, value]) => !String(value || "").trim());
+
+  if (missingField) {
+    throw new Error(`${missingField[0]} is required`);
+  }
+
+  if (!/^\d{10}$/.test(String(mobile))) {
+    throw new Error("Mobile number must contain exactly 10 digits");
+  }
+
+  const existing = await User.findOne({ mobile: String(mobile) });
+
+  if (existing) {
+    throw new Error("User already exists");
+  }
+
+  let lat = 0;
+  let lng = 0;
+
+  try {
+    const response = await axios.get(
+      "https://nominatim.openstreetmap.org/search",
+      {
+        params: {
+          postalcode: pincode,
+          country: "India",
+          format: "json",
+          limit: 1
+        },
+        headers: {
+          "User-Agent": "agrihitech-kisan"
+        }
+      }
+    );
+
+    if (response.data?.length > 0) {
+      lat = parseFloat(response.data[0].lat);
+      lng = parseFloat(response.data[0].lon);
+    }
+  } catch (error) {
+    // Registration remains available when optional geocoding is unavailable.
+  }
+
+  const user = await User.create({
+    mobile: String(mobile),
+    role: "COMPANY",
+    companyName: companyName.trim(),
+    contactPerson: contactPerson.trim(),
+    email: email?.trim(),
+    gstNumber: gstNumber?.trim()?.toUpperCase(),
+    address: address?.trim(),
+    location: {
+      state: state.trim(),
+      district: district.trim(),
+      village: village.trim(),
+      pincode: String(pincode).trim(),
+      type: "Point",
+      coordinates: [lng, lat]
+    }
+  });
+
+  const token = user.generateAuthToken();
+
+  return {
+    message: "Company Registered Successfully",
+    token,
+    user,
+    nextStep: {
+      action: "SELECT_SUBSCRIPTION",
+      plansEndpoint: "/api/subscription",
+      createOrderEndpoint: "/api/subscription/create-order",
+      verifyPaymentEndpoint: "/api/subscription/verify-payment"
+    }
+  };
+};
+
 // auth.service.js
 
 // ✅ GET ME
@@ -230,6 +351,11 @@ exports.getMe = async (userId) => {
     .populate({
       path: "subscription.planId",
       select: "name price duration"
+    })
+    .populate({
+      path: "dealerBrands",
+      select: "name image category createdBy",
+      populate: { path: "category", select: "name" }
     })
 
     .select("-password");
@@ -348,10 +474,47 @@ exports.updateProfile = async (
       data.proprietorName;
   }
 
+  if (user.role === "COMPANY") {
+    if (data.companyName) user.companyName = data.companyName;
+    if (data.contactPerson) user.contactPerson = data.contactPerson;
+    if (data.email !== undefined) user.email = data.email;
+    if (data.gstNumber !== undefined) user.gstNumber = data.gstNumber.toUpperCase();
+    if (data.address !== undefined) user.address = data.address;
+  }
+
+  if (user.role === "B2B" && data.dealerBrands !== undefined) {
+    let dealerBrands = data.dealerBrands;
+    if (typeof dealerBrands === "string") {
+      dealerBrands = JSON.parse(dealerBrands);
+    }
+    if (!Array.isArray(dealerBrands)) {
+      throw new Error("dealerBrands must be an array");
+    }
+
+    const selectedIds = [...new Set(dealerBrands)];
+    const allowedCreators = await User.find({ role: { $in: ["ADMIN", "COMPANY"] } }).distinct("_id");
+    const selectedBrands = await Brand.find({
+      _id: { $in: selectedIds },
+      createdBy: { $in: allowedCreators }
+    }).populate("category", "name");
+
+    if (selectedBrands.length !== selectedIds.length) {
+      throw new Error("One or more selected brands are unavailable");
+    }
+
+    const assignedCategories = (user.categories || []).map((name) => name.toLowerCase());
+    if (assignedCategories.length && selectedBrands.some((brand) => !assignedCategories.includes(brand.category?.name?.toLowerCase()))) {
+      throw new Error("Selected brands must belong to your registered categories");
+    }
+
+    user.dealerBrands = selectedIds;
+  }
+
   // ✅ ADMIN / B2B
   if (
     user.role === "ADMIN" ||
-    user.role === "B2B"
+    user.role === "B2B" ||
+    user.role === "COMPANY"
   ) {
 
     if (data.firmName) {

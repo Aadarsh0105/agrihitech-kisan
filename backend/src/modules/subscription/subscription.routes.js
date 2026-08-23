@@ -14,6 +14,7 @@ router.delete("/:id", verifyToken, isAdmin, controller.deletePlan);
 
 // USER
 router.get("/", controller.getPlans);
+router.get("/history", verifyToken, controller.getHistory);
 router.post("/create-order", verifyToken, controller.createOrder);
 router.post("/verify-payment", verifyToken, controller.verifyPayment);
 // router.post("/subscribe", verifyToken, controller.subscribe);

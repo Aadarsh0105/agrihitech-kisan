@@ -1,19 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { BadgeCheck, LayoutDashboard, LogOut, Menu, Package, Settings, Store, X } from 'lucide-react';
-import { clearSession, getSessionUser, sessionUserName } from '../../services/auth-session';
+import { BadgeCheck, LayoutDashboard, LogOut, Menu, Package, Settings, ShoppingBag, Store, WalletCards, X } from 'lucide-react';
+import { AUTH_CHANGED_EVENT, clearSession, getSessionUser, sessionUserName } from '../../services/auth-session';
 
 const links = [
   { label: 'Dashboard', path: '/business/dashboard', icon: LayoutDashboard },
-  { label: 'My Products', path: '/business/products', icon: Package },
   { label: 'My Brands', path: '/business/brands', icon: BadgeCheck },
+  { label: 'My Products', path: '/business/products', icon: Package },
+  { label: 'B2B Marketplace', path: '/business/marketplace', icon: ShoppingBag },
+  { label: 'Subscription', path: '/business/subscription', icon: WalletCards },
   { label: 'Settings', path: '/business/settings', icon: Settings },
 ];
 
 export function BusinessLayout() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const user = getSessionUser();
+  const [user, setUser] = useState(getSessionUser());
+  useEffect(() => { const refresh = () => setUser(getSessionUser()); window.addEventListener(AUTH_CHANGED_EVENT, refresh); return () => window.removeEventListener(AUTH_CHANGED_EVENT, refresh); }, []);
   const signOut = () => { clearSession(); navigate('/login?role=B2B', { replace: true }); };
 
   return <div className="flex min-h-screen bg-muted/30">
@@ -30,7 +33,7 @@ export function BusinessLayout() {
     <div className="min-w-0 flex-1">
       <header className="sticky top-0 z-30 flex h-16 items-center border-b border-border bg-background/90 px-4 backdrop-blur sm:px-6">
         <button className="mr-3 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="h-5 w-5" /></button>
-        <div className="ml-auto flex items-center gap-3"><div className="hidden text-right sm:block"><p className="text-sm font-semibold">{user ? sessionUserName(user) : 'Business'}</p><p className="text-[11px] text-muted-foreground">B2B account</p></div><button onClick={signOut} className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-destructive hover:bg-destructive/10"><LogOut className="h-4 w-4" />Sign out</button></div>
+        <div className="ml-auto flex items-center gap-3">{user?.profileimage ? <img src={user.profileimage} alt="" className="h-9 w-9 rounded-xl border border-border object-cover" /> : null}<div className="hidden text-right sm:block"><p className="text-sm font-semibold">{user ? sessionUserName(user) : 'Business'}</p><p className="text-[11px] text-muted-foreground">B2B account</p></div><button onClick={signOut} className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-destructive hover:bg-destructive/10"><LogOut className="h-4 w-4" />Sign out</button></div>
       </header>
       <main className="p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl"><Outlet /></div></main>
     </div>

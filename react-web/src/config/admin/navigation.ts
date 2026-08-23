@@ -1,14 +1,16 @@
 import {
   LayoutDashboardIcon,
+  Building2Icon,
   ImageIcon,
   BadgeCheckIcon,
   FolderTreeIcon,
   PackageIcon,
   LandmarkIcon,
   SettingsIcon,
-  LanguagesIcon,
   UsersIcon,
-  BellIcon,
+  HandshakeIcon,
+  NewspaperIcon,
+  TrendingUpIcon,
   type LucideIcon } from
 'lucide-react';
 
@@ -31,7 +33,11 @@ export const navigation: NavGroup[] = [
 },
 {
   label: 'Storefront CMS',
-  items: [{ label: 'Banners', path: '/admin/banners', icon: ImageIcon }]
+  items: [
+    { label: 'Banners', path: '/admin/banners', icon: ImageIcon },
+    { label: 'News', path: '/admin/news', icon: NewspaperIcon },
+    { label: 'Anudan Yojana', path: '/admin/schemes', icon: LandmarkIcon }
+  ]
 },
 {
   label: 'Catalogue',
@@ -43,7 +49,19 @@ export const navigation: NavGroup[] = [
 },
 {
   label: 'Commerce',
-  items: [{ label: 'Subscriptions', path: '/admin/subscriptions', icon: LandmarkIcon }]
+  items: [
+    { label: 'Dealers / B2B', path: '/admin/dealers', icon: HandshakeIcon },
+    { label: 'B2C Users', path: '/admin/users', icon: UsersIcon },
+    { label: 'Companies', path: '/admin/companies', icon: Building2Icon },
+    { label: 'Subscriptions', path: '/admin/subscriptions', icon: LandmarkIcon }
+  ]
+},
+{
+  label: 'Platform',
+  items: [
+    { label: 'Reports', path: '/admin/reports', icon: TrendingUpIcon },
+    { label: 'Settings', path: '/admin/settings', icon: SettingsIcon }
+  ]
 }];
 
 

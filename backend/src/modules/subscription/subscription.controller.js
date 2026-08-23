@@ -118,3 +118,12 @@ exports.skipTrial = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+exports.getHistory = async (req, res) => {
+  try {
+    const data = await service.getSubscriptionHistory(req.user._id);
+    res.json(data);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};

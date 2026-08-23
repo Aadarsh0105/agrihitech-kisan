@@ -122,7 +122,7 @@ export function Dashboard() {
             title="Latest dealers"
             description="Newest additions to the verified network"
             action={
-              <Link to="/dealers">
+              <Link to="/admin/dealers">
                 <Button variant="ghost" size="sm">
                   View all
                   <ArrowRightIcon className="h-3.5 w-3.5" />
@@ -136,7 +136,7 @@ export function Dashboard() {
                 <Thumb src={dealer.logo} alt={dealer.businessName} />
                 <div className="min-w-0 flex-1">
                   <Link
-                    to={`/dealers/${dealer.id}`}
+                    to={`/admin/dealers/${dealer.id}`}
                     className="block truncate text-sm font-medium text-foreground hover:text-primary">
 
                     {dealer.businessName}

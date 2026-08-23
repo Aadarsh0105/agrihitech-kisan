@@ -5,6 +5,7 @@ export interface PublicBrand {
   name: string;
   image?: string;
   productCount?: number;
+  category?: { _id: string; name: string };
 }
 
 interface BrandListResponse {

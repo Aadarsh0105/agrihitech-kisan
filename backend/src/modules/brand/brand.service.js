@@ -247,16 +247,23 @@ exports.getUserBrandsByCategory = async (categoryId, query) => {
 
 // 🔹 Get All Brands with product usage count
 exports.getAllBrands = async (query, user) => {
-  const { search = "" } = query;
+  const { search = "", assignable = "false" } = query;
 
   const filter = {
     name: { $regex: search, $options: "i" },
   };
 
+  if (assignable === "true") {
+    const allowedCreators = await User.find({
+      role: { $in: ["ADMIN", "COMPANY"] }
+    }).select("_id");
+    filter.createdBy = { $in: allowedCreators.map((creator) => creator._id) };
+  }
+
   let productMatch = {};
 
   // 🔥 B2B -> all B2B users products
-  if (user.role === "B2B") {
+  if (user?.role === "B2B") {
     const b2bUsers = await User.find({ role: "B2B" }).select("_id");
 
     productMatch.createdBy = {
@@ -265,7 +272,7 @@ exports.getAllBrands = async (query, user) => {
   }
 
   // 🔥 B2C -> all ADMIN products
-  else if (user.role === "B2C") {
+  else if (user?.role === "B2C") {
     const admins = await User.find({ role: "ADMIN" }).select("_id");
 
     productMatch.createdBy = {
@@ -554,4 +561,26 @@ exports.getBrandsByProductId = async (productId) => {
     totalBrands: product.brand.length,
     brands: product.brand
   };
+};
+
+exports.getMyBrandDealers = async (userId) => {
+  const brandIds = await Brand.find({ createdBy: userId }).distinct("_id");
+
+  if (!brandIds.length) {
+    return [];
+  }
+
+  return User.find({
+    role: "B2B",
+    dealerBrands: { $in: brandIds }
+  })
+    .select(
+      "firmName proprietorName mobile categories location companyDealerStatus dealerBrands"
+    )
+    .populate({
+      path: "dealerBrands",
+      match: { _id: { $in: brandIds } },
+      select: "name image category"
+    })
+    .sort({ createdAt: -1 });
 };

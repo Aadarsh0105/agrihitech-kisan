@@ -22,10 +22,11 @@ import type {
   Banner,
 } from "../redux/home/homeTypes";
 import { getHomepageProducts } from '../services/product.service';
+import { getPublicNews } from '../services/news.service';
 export function Home() {
   const trending = useAsync(getHomepageProducts, []);
   const testimonials = useAsync(() => api.getTestimonials(), []);
-  const news = useAsync(() => api.getNews(), []);
+  const news = useAsync(() => getPublicNews(1, 3).then((result) => result.news), []);
   const benefits = useAsync(() => api.getBenefits(), []);
   const dispatch = useAppDispatch();
 

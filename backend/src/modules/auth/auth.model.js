@@ -4,11 +4,26 @@ const jwt = require("jsonwebtoken");
 const userSchema = new mongoose.Schema({
   mobile: { type: String, required: true, unique: true },
 
-  role: { type: String, enum: ["B2C", "B2B", "ADMIN"], default: "B2C" },
+  role: { type: String, enum: ["B2C", "B2B", "COMPANY", "ADMIN"], default: "B2C" },
 
   // 🔹 B2B fields
   firmName: String,
   proprietorName: String,
+  companyName: String,
+  contactPerson: String,
+  email: String,
+  gstNumber: String,
+  address: String,
+  company: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null
+  },
+  companyDealerStatus: {
+    type: String,
+    enum: ["ACTIVE", "SUSPENDED"],
+    default: "ACTIVE"
+  },
   password: String,
   categories: {
     type: [String],
@@ -20,6 +35,11 @@ const userSchema = new mongoose.Schema({
       message: "Maximum 2 categories allowed"
     }
   },
+
+  dealerBrands: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Brand"
+  }],
 
   profileimage: {
     type: String,
@@ -82,6 +102,21 @@ const userSchema = new mongoose.Schema({
       default: false
     }
   },
+
+  subscriptionHistory: [{
+    planId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subscription"
+    },
+    paymentStatus: String,
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
+    amount: Number,
+    currency: { type: String, default: "INR" },
+    startDate: Date,
+    endDate: Date,
+    isActive: Boolean
+  }],
 
   trialUsed: {
     type: Boolean,

@@ -3,14 +3,14 @@ const express = require("express");
 const router = express.Router();
 
 const brandController = require("./brand.controller");
-const { verifyToken, isAdmin, isB2B } = require("../../middleware/isAdmin");
+const { verifyToken, isBrandManager, isCompany } = require("../../middleware/isAdmin");
 const upload = require("../../middleware/upload");
 
 // 🔥 Only B2B users can create brand
 router.post(
   "/create",
   verifyToken,
-  isB2B,
+  isBrandManager,
   upload.single("image"),
   brandController.createBrand
 );
@@ -18,6 +18,12 @@ router.post(
 // 🔹 Get All Brands
 router.get("/", brandController.getAllBrands);
 router.get("/my-brands", verifyToken, brandController.getMyBrands);
+router.get(
+  "/my-dealers",
+  verifyToken,
+  isCompany,
+  brandController.getMyBrandDealers
+);
 router.get("/:id", brandController.getBrandsByCategory);
 
 // User-specific brands
@@ -38,7 +44,7 @@ router.get(
 router.put(
   "/:id",
   verifyToken,
-  isB2B,
+  isBrandManager,
   upload.single("image"),
   brandController.updateBrand
 );
@@ -48,7 +54,7 @@ router.put(
 router.delete(
   "/:id",
   verifyToken,
-  isB2B,
+  isBrandManager,
   brandController.deleteBrand
 );
 

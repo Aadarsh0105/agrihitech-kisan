@@ -3,6 +3,22 @@ const User = require("../auth/auth.model");
 const razorpay = require("../../config/razorpay");
 const crypto = require("crypto");
 
+const archiveCurrentSubscription = (user) => {
+  const current = user.subscription;
+  if (!current?.startDate) return;
+
+  user.subscriptionHistory.push({
+    planId: current.planId,
+    paymentStatus: current.paymentStatus,
+    razorpayOrderId: current.razorpayOrderId,
+    razorpayPaymentId: current.razorpayPaymentId,
+    amount: current.amount,
+    currency: current.currency,
+    startDate: current.startDate,
+    endDate: current.endDate,
+    isActive: false
+  });
+};
 
 
 exports.createOrder = async (userId, planId) => {
@@ -70,6 +86,8 @@ exports.verifyPayment = async (
   endDate.setDate(
     startDate.getDate() + plan.duration
   );
+
+  archiveCurrentSubscription(user);
 
   user.subscription = {
     planId: plan._id,
@@ -186,6 +204,8 @@ exports.activateTrial = async (userId) => {
   const endDate = new Date();
   endDate.setDate(startDate.getDate() + trialPlan.duration);
 
+  archiveCurrentSubscription(user);
+
   user.subscription = {
     planId: trialPlan._id,
     startDate,
@@ -199,4 +219,24 @@ exports.activateTrial = async (userId) => {
   await user.save();
 
   return user;
+};
+
+exports.getSubscriptionHistory = async (userId) => {
+  const user = await User.findById(userId)
+    .select("subscription subscriptionHistory trialUsed")
+    .populate("subscription.planId", "name type price currency duration")
+    .populate("subscriptionHistory.planId", "name type price currency duration")
+    .lean();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return {
+    current: user.subscription,
+    history: [...(user.subscriptionHistory || [])].sort(
+      (a, b) => new Date(b.startDate || 0) - new Date(a.startDate || 0)
+    ),
+    trialUsed: user.trialUsed
+  };
 };

@@ -4,6 +4,11 @@ export interface SessionUser {
   role: 'B2C' | 'B2B' | 'ADMIN' | 'COMPANY';
   firmName?: string;
   proprietorName?: string;
+  companyName?: string;
+  contactPerson?: string;
+  email?: string;
+  gstNumber?: string;
+  address?: string;
   profileimage?: string;
   categories?: string[];
 }
@@ -32,5 +37,5 @@ export function clearSession() {
 }
 
 export function sessionUserName(user: SessionUser) {
-  return user.proprietorName || user.firmName || 'User';
+  return user.contactPerson || user.companyName || user.proprietorName || user.firmName || 'User';
 }

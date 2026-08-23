@@ -1,16 +1,11 @@
 import api from '../api/axios';
+import { getSessionUser } from './auth-session';
 
 export interface BusinessBrand {
   _id: string;
   name: string;
   image?: string;
   category?: { _id: string; name: string } | null;
-}
-
-export interface BusinessBrandDraft {
-  name: string;
-  category: string;
-  image: File | null;
 }
 
 export interface BusinessProduct {
@@ -60,35 +55,66 @@ export interface BusinessProductDraft {
   images: File[] | null;
 }
 
+export interface MarketplaceCategory { _id: string; name: string; image?: string; totalBrands?: number; }
+export interface MarketplaceBrand { _id: string; name: string; image?: string; productCount?: number; }
+export interface MarketplaceProduct { _id: string; name: string; description?: string; price?: number; quantity?: number; unit?: string; images?: Array<{ url: string }>; createdBy?: { _id: string }; }
+export interface MarketplaceSeller { _id: string; firmName?: string; proprietorName?: string; mobile?: string | null; distanceInKm?: number; location?: { state?: string; district?: string; village?: string; pincode?: string }; subscription?: { isActive?: boolean }; }
+export interface BusinessProfile { _id: string; mobile: string; firmName?: string; proprietorName?: string; email?: string; profileimage?: string; categories?: string[]; location?: { state?: string; district?: string; village?: string; pincode?: string }; }
+export interface BusinessProfileDraft { firmName: string; proprietorName: string; email: string; location: { state: string; district: string; village: string; pincode: string }; profileimage: File | null; }
+
 export async function getMyBrands(): Promise<BusinessBrand[]> {
-  const { data } = await api.get<{ brands: BusinessBrand[] }>('/brands/my-brands', {
-    params: { page: 1, limit: 100 },
+  const { data } = await api.get<{ user: { dealerBrands?: BusinessBrand[] } }>('/auth/me');
+  return data.user.dealerBrands ?? [];
+}
+
+export async function getAssignableBrands(): Promise<BusinessBrand[]> {
+  const { data } = await api.get<{ brands: BusinessBrand[] }>('/brands', {
+    params: { assignable: true },
   });
   return data.brands ?? [];
 }
 
-function brandFormData(draft: BusinessBrandDraft) {
-  const data = new FormData();
-  data.append('name', draft.name.trim());
-  data.append('category', draft.category);
-  if (draft.image) data.append('image', draft.image);
-  return data;
+export async function updateMyBrands(dealerBrands: string[]) {
+  await api.put('/auth/me/update', { dealerBrands });
+  return getMyBrands();
 }
 
-export async function createMyBrand(draft: BusinessBrandDraft) {
-  await api.post('/brands/create', brandFormData(draft), {
-    headers: { 'Content-Type': 'multipart/form-data' },
+export async function getMarketplaceCategories() {
+  const { data } = await api.get<{ categories: MarketplaceCategory[] }>('/categories/categories-by-role', { params: { page: 1, limit: 100 } });
+  return data.categories ?? [];
+}
+
+export async function getMarketplaceBrands(categoryId: string) {
+  const { data } = await api.get<{ brands: MarketplaceBrand[] }>(`/categories/${categoryId}/brands`, { params: { page: 1, limit: 100 } });
+  return (data.brands ?? []).filter((brand) => (brand.productCount ?? 0) > 0);
+}
+
+export async function getMarketplaceProducts(brandId: string) {
+  const { data } = await api.get<{ products: MarketplaceProduct[] }>(`/brands/${brandId}/products`, { params: { page: 1, limit: 100 } });
+  return (data.products ?? []).filter((product) => product.createdBy?._id !== getSessionUser()?._id);
+}
+
+export async function getMarketplaceProductSeller(productId: string, coordinates: { latitude: number; longitude: number }) {
+  const { data } = await api.get<{ product: MarketplaceProduct; productOwner?: MarketplaceSeller }>(`/products/${productId}`, {
+    params: { lat: coordinates.latitude, lng: coordinates.longitude },
   });
+  return { product: data.product, seller: data.productOwner };
 }
 
-export async function updateMyBrand(brandId: string, draft: BusinessBrandDraft) {
-  await api.put(`/brands/${brandId}`, brandFormData(draft), {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+export async function getBusinessProfile() {
+  const { data } = await api.get<{ user: BusinessProfile }>('/auth/me');
+  return data.user;
 }
 
-export async function deleteMyBrand(brandId: string) {
-  await api.delete(`/brands/${brandId}`);
+export async function updateBusinessProfile(payload: BusinessProfileDraft) {
+  const form = new FormData();
+  form.append('firmName', payload.firmName.trim());
+  form.append('proprietorName', payload.proprietorName.trim());
+  form.append('email', payload.email.trim());
+  form.append('location', JSON.stringify(payload.location));
+  if (payload.profileimage) form.append('profileimage', payload.profileimage);
+  const { data } = await api.put<{ user: BusinessProfile }>('/auth/me/update', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return data.user;
 }
 
 export async function getMyProducts(): Promise<BusinessProduct[]> {

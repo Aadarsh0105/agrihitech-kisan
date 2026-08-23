@@ -1,9 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Heart } from "lucide-react";
 
 import type { Product } from "../../types";
 import { useLanguage } from "../../i18n/LanguageContext";
+import { getSessionUser } from "../../services/auth-session";
+import { isFavourite, toggleFavourite } from "../../services/user-local.service";
 
 interface Props {
   product: Product;
@@ -15,6 +18,8 @@ export function ProductCard({
   index = 0,
 }: Props) {
   const { t, tv } = useLanguage();
+  const navigate = useNavigate();
+  const [saved, setSaved] = useState(() => isFavourite(product.id));
   const productPath = `/products/${product.id}`;
   const destination = localStorage.getItem("token")
     ? productPath
@@ -50,9 +55,8 @@ export function ProductCard({
             </span>
           </div>
         )}
-        <button type="button" aria-label="Wishlist" onClick={(e) => e.preventDefault()} className="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white
-          bg-white/90 shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-red-500 hover:text-white">
-          <Heart className="h-5 w-5" />
+        <button type="button" aria-label={saved ? "Remove from favourites" : "Add to favourites"} onClick={(event) => { event.preventDefault(); event.stopPropagation(); if (getSessionUser()?.role !== 'B2C') { navigate(`/login?role=B2C&returnTo=${encodeURIComponent(productPath)}`); return; } setSaved(toggleFavourite(product.id)); }} className={`absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 ${saved ? 'bg-red-500 text-white' : 'bg-white/90 hover:bg-red-500 hover:text-white'}`}>
+          <Heart className={`h-5 w-5 ${saved ? 'fill-current' : ''}`} />
         </button>
         {/* Product Image */}
         <div className="relative flex h-full w-full items-center justify-center">

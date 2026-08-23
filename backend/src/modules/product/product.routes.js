@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const productController = require("./product.controller");
-const { verifyToken, isAdmin, isB2B } = require("../../middleware/isAdmin");
+const { verifyToken, isProductManager } = require("../../middleware/isAdmin");
 const upload = require("../../middleware/upload");
 const { checkSubscription } = require("../../middleware/checkSubscription");
 
@@ -13,7 +13,7 @@ router.post(
   "/create",
   verifyToken,
   // checkSubscription, // only SUBSCRIBED users can add product
-  isB2B, // only B2B users can add product
+  isProductManager,
   upload.array("images", 5),
   productController.createProduct
 );
@@ -36,7 +36,7 @@ router.get("/:id", verifyToken, productController.getSingleProduct);
 router.put(
   "/:id",
   verifyToken,
-  isB2B,
+  isProductManager,
   upload.array("images", 5),
   productController.updateProduct
 );
@@ -46,7 +46,7 @@ router.put(
 router.delete(
   "/:id",
   verifyToken,
-  isB2B,
+  isProductManager,
   productController.deleteProduct
 );
 

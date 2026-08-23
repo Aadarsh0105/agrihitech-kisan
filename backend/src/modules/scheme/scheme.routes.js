@@ -1,0 +1,10 @@
+const router = require("express").Router();
+const controller = require("./scheme.controller");
+const { verifyToken, isAdmin } = require("../../middleware/isAdmin");
+router.get("/", controller.list);
+router.get("/slug/:slug", controller.getBySlug);
+router.get("/:id", controller.getOne);
+router.post("/", verifyToken, isAdmin, controller.create);
+router.put("/:id", verifyToken, isAdmin, controller.update);
+router.delete("/:id", verifyToken, isAdmin, controller.remove);
+module.exports = router;

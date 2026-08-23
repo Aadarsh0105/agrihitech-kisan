@@ -1,76 +1,60 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { BadgeCheck, Edit3, Plus, Trash2 } from 'lucide-react';
+import { BadgeCheck, Building2, Check, SlidersHorizontal } from 'lucide-react';
 import { Button } from '../../components/admin/ui/Button';
-import { ConfirmDialog, Modal } from '../../components/admin/ui/Modal';
-import { Field, Input, Select } from '../../components/admin/ui/Input';
-import { getPublicCategories, type PublicCategory } from '../../services/category.service';
+import { Modal } from '../../components/admin/ui/Modal';
 import { getSessionUser } from '../../services/auth-session';
-import { createMyBrand, deleteMyBrand, getMyBrands, updateMyBrand, type BusinessBrand, type BusinessBrandDraft } from '../../services/business.service';
+import { getAssignableBrands, getMyBrands, updateMyBrands, type BusinessBrand } from '../../services/business.service';
 
-const emptyDraft: BusinessBrandDraft = { name: '', category: '', image: null };
-const messageOf = (error: unknown) => axios.isAxiosError(error) ? error.response?.data?.error ?? error.response?.data?.message ?? error.message : error instanceof Error ? error.message : 'Something went wrong';
+const messageOf = (error: unknown) => axios.isAxiosError(error)
+  ? error.response?.data?.error ?? error.response?.data?.message ?? error.message
+  : error instanceof Error ? error.message : 'Unable to load brands';
 
 export function BusinessBrands() {
-  const [brands, setBrands] = useState<BusinessBrand[]>([]);
-  const [categories, setCategories] = useState<PublicCategory[]>([]);
-  const [draft, setDraft] = useState<BusinessBrandDraft>({ ...emptyDraft });
-  const [editing, setEditing] = useState<BusinessBrand | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<BusinessBrand | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [assigned, setAssigned] = useState<BusinessBrand[]>([]);
+  const [available, setAvailable] = useState<BusinessBrand[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const categories = getSessionUser()?.categories?.map((name) => name.toLowerCase()) ?? [];
+  const allowedBrands = available.filter((brand) =>
+    !categories.length || (brand.category?.name && categories.includes(brand.category.name.toLowerCase())),
+  );
 
   const load = async () => {
     setLoading(true); setError('');
-    try { const [ownedBrands, categoryList] = await Promise.all([getMyBrands(), getPublicCategories()]); setBrands(ownedBrands); setCategories(categoryList); }
-    catch (requestError) { setError(messageOf(requestError)); }
-    finally { setLoading(false); }
+    try {
+      const [myBrands, publicBrands] = await Promise.all([getMyBrands(), getAssignableBrands()]);
+      setAssigned(myBrands); setAvailable(publicBrands); setSelected(myBrands.map((brand) => brand._id));
+    } catch (reason) { setError(messageOf(reason)); } finally { setLoading(false); }
   };
   useEffect(() => { void load(); }, []);
 
-  const allowedCategories = useMemo(() => {
-    const assigned = getSessionUser()?.categories?.map((name) => name.toLowerCase()) ?? [];
-    return assigned.length ? categories.filter((category) => assigned.includes(category.name.toLowerCase())) : categories;
-  }, [categories]);
-
-  const openCreate = () => { setEditing(null); setDraft({ ...emptyDraft }); setError(''); setModalOpen(true); };
-  const openEdit = (brand: BusinessBrand) => { setEditing(brand); setDraft({ name: brand.name, category: brand.category?._id ?? '', image: null }); setError(''); setModalOpen(true); };
   const save = async () => {
-    if (!draft.name.trim() || !draft.category || (!editing && !draft.image)) return;
-    setSaving(true); setError('');
-    try { editing ? await updateMyBrand(editing._id, draft) : await createMyBrand(draft); setModalOpen(false); await load(); }
-    catch (requestError) { setError(messageOf(requestError)); }
-    finally { setSaving(false); }
-  };
-  const remove = async () => {
-    if (!pendingDelete || !brands.some((brand) => brand._id === pendingDelete._id)) return;
-    setSaving(true); setError('');
-    try { await deleteMyBrand(pendingDelete._id); setPendingDelete(null); await load(); }
-    catch (requestError) { setError(messageOf(requestError)); }
-    finally { setSaving(false); }
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const updated = await updateMyBrands(selected); setAssigned(updated); setOpen(false);
+      setSuccess('Brand assignments updated successfully.');
+    } catch (reason) { setError(messageOf(reason)); } finally { setSaving(false); }
   };
 
   return <div className="space-y-6">
-    <div className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="font-display text-3xl font-extrabold">My Brands</h1><p className="mt-2 text-sm text-muted-foreground">Create and manage brands owned by your business.</p></div><Button variant="primary" onClick={openCreate}><Plus className="h-4 w-4" />Add brand</Button></div>
-    {error ? <div className="rounded-xl border border-danger/20 bg-danger-subtle p-4 text-sm text-danger">{error}</div> : null}
-    {loading ? <Message text="Loading your brands..." /> : brands.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{brands.map((brand) => <BrandCard key={brand._id} brand={brand} onEdit={() => openEdit(brand)} onDelete={() => setPendingDelete(brand)} />)}</div> : <Message text="You have not created any brands yet." />}
+    <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm font-semibold text-primary">Dealer catalogue</p><h1 className="mt-1 font-display text-3xl font-extrabold">My Brands</h1><p className="mt-2 text-sm text-muted-foreground">Select the Company and Admin brands your business is authorised to deal in.</p></div><Button variant="primary" onClick={() => { setSelected(assigned.map((brand) => brand._id)); setOpen(true); }}><SlidersHorizontal className="h-4 w-4" />Manage brands</Button></div>
+    {error ? <div className="rounded-xl bg-destructive/10 p-4 text-sm font-medium text-destructive">{error}</div> : null}
+    {success ? <div className="flex items-center gap-2 rounded-xl bg-primary/10 p-4 text-sm font-medium text-primary"><Check className="h-4 w-4" />{success}</div> : null}
+    <section className="rounded-2xl border border-primary/20 bg-primary/5 p-5"><div className="flex gap-3"><BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><div><h2 className="font-display font-bold">Assignment-only brand access</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">Brands are created and maintained by Companies or Admin. Your business can assign eligible brands and create products under those assignments.</p></div></div></section>
+    {loading ? <div className="h-64 animate-pulse rounded-2xl bg-muted" /> : assigned.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{assigned.map((brand) => <BrandCard key={brand._id} brand={brand} />)}</div> : <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center"><Building2 className="mx-auto h-10 w-10 text-muted-foreground/40" /><p className="mt-3 font-semibold">No brands assigned</p><p className="mt-1 text-sm text-muted-foreground">Select brands available under your registered categories.</p><Button className="mt-5" variant="primary" onClick={() => setOpen(true)}>Assign brands</Button></div>}
 
-    <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit brand' : 'Add brand'} description="The brand will belong only to your business account." footer={<><Button onClick={() => setModalOpen(false)}>Cancel</Button><Button variant="primary" onClick={() => void save()} disabled={saving || !draft.name.trim() || !draft.category || (!editing && !draft.image)}>{saving ? 'Saving...' : editing ? 'Save changes' : 'Create brand'}</Button></>}>
-      <div className="space-y-4">
-        <Field label="Brand name" required><Input value={draft.name} placeholder="Enter brand name" onChange={(event) => setDraft((old) => ({ ...old, name: event.target.value }))} /></Field>
-        <Field label="Category" required><Select value={draft.category} onChange={(event) => setDraft((old) => ({ ...old, category: event.target.value }))}><option value="">Select category</option>{allowedCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select></Field>
-        <Field label="Brand image" required={!editing} hint={editing ? 'Leave empty to keep the current image' : 'Upload a logo or brand image'}><Input type="file" accept="image/*" onChange={(event) => setDraft((old) => ({ ...old, image: event.target.files?.[0] ?? null }))} /></Field>
-        {draft.image ? <img src={URL.createObjectURL(draft.image)} alt="Brand preview" className="h-28 w-full rounded-xl border border-border object-contain p-2" /> : editing?.image ? <img src={editing.image} alt={editing.name} className="h-28 w-full rounded-xl border border-border object-contain p-2" /> : null}
-      </div>
+    <Modal open={open} onClose={() => setOpen(false)} title="Assign brands" description="Choose brands from your registered business categories." size="lg" footer={<><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="primary" disabled={saving} onClick={() => void save()}>{saving ? 'Saving...' : `Save ${selected.length} assignment${selected.length === 1 ? '' : 's'}`}</Button></>}>
+      <div className="max-h-[430px] overflow-y-auto pr-1">{allowedBrands.length ? <div className="grid gap-3 sm:grid-cols-2">{allowedBrands.map((brand) => { const checked = selected.includes(brand._id); return <button type="button" key={brand._id} onClick={() => setSelected((old) => checked ? old.filter((id) => id !== brand._id) : [...old, brand._id])} className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${checked ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border hover:bg-muted/50'}`}><div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">{brand.image ? <img src={brand.image} alt="" className="h-full w-full object-contain p-1" /> : <Building2 className="h-5 w-5 text-muted-foreground" />}</div><div className="min-w-0 flex-1"><p className="truncate font-semibold">{brand.name}</p><p className="truncate text-xs text-muted-foreground">{brand.category?.name || 'Uncategorized'}</p></div><span className={`grid h-6 w-6 shrink-0 place-items-center rounded-md border ${checked ? 'border-primary bg-primary text-primary-foreground' : 'border-border'}`}>{checked ? <Check className="h-4 w-4" /> : null}</span></button>; })}</div> : <p className="rounded-xl bg-muted/50 px-4 py-10 text-center text-sm text-muted-foreground">No Company or Admin brands are available for your registered categories.</p>}</div>
     </Modal>
-    <ConfirmDialog open={Boolean(pendingDelete)} onClose={() => setPendingDelete(null)} onConfirm={() => void remove()} title="Delete brand" message="This brand will be permanently removed. Delete its products first if the backend prevents removal." />
   </div>;
 }
 
-function BrandCard({ brand, onEdit, onDelete }: { brand: BusinessBrand; onEdit: () => void; onDelete: () => void }) {
-  return <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft"><div className="grid h-40 place-items-center bg-muted/50">{brand.image ? <img src={brand.image} alt={brand.name} className="h-full w-full object-contain p-3" /> : <BadgeCheck className="h-10 w-10 text-primary/50" />}</div><div className="p-4"><h2 className="font-display text-lg font-bold">{brand.name}</h2><p className="mt-1 text-sm text-muted-foreground">{brand.category?.name ?? 'Uncategorized'}</p><div className="mt-4 flex gap-2 border-t border-border pt-3"><Button size="sm" className="flex-1" onClick={onEdit}><Edit3 className="h-3.5 w-3.5" />Edit</Button><Button variant="outlineDanger" size="sm" onClick={onDelete}><Trash2 className="h-3.5 w-3.5" />Delete</Button></div></div></article>;
+function BrandCard({ brand }: { brand: BusinessBrand }) {
+  return <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft"><div className="grid h-40 place-items-center bg-muted/50">{brand.image ? <img src={brand.image} alt={brand.name} className="h-full w-full object-contain p-3" /> : <Building2 className="h-10 w-10 text-primary/40" />}</div><div className="p-4"><div className="flex items-start justify-between gap-3"><div><h2 className="font-display text-lg font-bold">{brand.name}</h2><p className="mt-1 text-sm text-muted-foreground">{brand.category?.name || 'Uncategorized'}</p></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">Assigned</span></div></div></article>;
 }
-
-function Message({ text }: { text: string }) { return <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center text-sm text-muted-foreground">{text}</div>; }

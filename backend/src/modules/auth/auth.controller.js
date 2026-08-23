@@ -32,6 +32,16 @@ exports.registerB2B = async (req, res) => {
   }
 };
 
+// Register Company
+exports.registerCompany = async (req, res) => {
+  try {
+    const data = await authService.registerCompany(req.body);
+    res.status(201).json(data);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
 
 
 exports.getMe = async (req, res) => {
