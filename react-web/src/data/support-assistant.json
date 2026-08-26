@@ -1,0 +1,117 @@
+{
+  "contact": {
+    "phone": "+91 1800 200 4455",
+    "whatsapp": "919000044551",
+    "whatsappMessage": "Hello Agri HiTech Kisan, I need help with the platform."
+  },
+  "assistant": {
+    "name": "Kisan Sahayak",
+    "welcome": "Namaste! I can help you explore products, brands, government schemes, mandi bhav, nearby dealers, registrations, and subscriptions. What would you like to know?",
+    "fallback": "I could not find an exact answer for that. Try Products, Mandi Bhav, Anudan Yojana, Nearby Dealers, Registration, or Contact Support.",
+    "initialSuggestions": ["Browse products", "Mandi bhav", "Anudan yojana", "Find dealers"],
+    "topics": [
+      {
+        "id": "products",
+        "keywords": ["product", "products", "item", "items", "seed", "seeds", "fertilizer", "pesticide", "crop protection", "buy product", "catalogue"],
+        "answer": "Browse agricultural products by category or brand. Sign in when you want to view protected product and nearby-seller details.",
+        "linkLabel": "Browse products",
+        "link": "/products",
+        "suggestions": ["Product categories", "Popular brands", "Find dealers"]
+      },
+      {
+        "id": "categories",
+        "keywords": ["category", "categories", "product category", "crop category", "types of products"],
+        "answer": "Our categories help you quickly find seeds, crop-care products, farm inputs, and other agricultural products.",
+        "linkLabel": "View categories",
+        "link": "/categories",
+        "suggestions": ["Browse products", "Popular brands"]
+      },
+      {
+        "id": "brands",
+        "keywords": ["brand", "brands", "company", "companies", "manufacturer", "popular brands"],
+        "answer": "Explore registered agricultural brands and companies, then open a brand to see its available products.",
+        "linkLabel": "View brands",
+        "link": "/brands",
+        "suggestions": ["Browse products", "Product categories"]
+      },
+      {
+        "id": "mandi",
+        "keywords": ["mandi", "mandi bhav", "market price", "crop price", "commodity rate", "today rate", "aaj ka bhav", "भाव", "मंडी भाव"],
+        "answer": "Check current mandi bhav and commodity prices to stay informed before buying or selling crops.",
+        "linkLabel": "Check mandi bhav",
+        "link": "/mandi-bhav",
+        "suggestions": ["Anudan yojana", "Agriculture news"]
+      },
+      {
+        "id": "schemes",
+        "keywords": ["anudan", "anudaan", "yojana", "scheme", "schemes", "subsidy", "government scheme", "farmer support", "grant", "अनुदान", "योजना"],
+        "answer": "Explore government Anudan Yojana information, including benefits, eligibility, application process, and required documents. Scheme pages are public and do not require login.",
+        "linkLabel": "Explore schemes",
+        "link": "/anudan-yojana",
+        "suggestions": ["Mandi bhav", "Agriculture news"]
+      },
+      {
+        "id": "dealers",
+        "keywords": ["dealer", "dealers", "nearest dealer", "nearby dealer", "seller", "shop", "store", "available near me", "find dealer", "call seller"],
+        "answer": "Allow location access and sign in to see nearby registered dealers, distance, availability, and seller contact details for a product.",
+        "linkLabel": "Browse products",
+        "link": "/products",
+        "suggestions": ["Customer login", "Browse products"]
+      },
+      {
+        "id": "news",
+        "keywords": ["news", "agriculture news", "farming update", "latest update", "monsoon", "crop news"],
+        "answer": "Read the latest agriculture, crop, policy, and monsoon updates from the News section.",
+        "linkLabel": "Read news",
+        "link": "/news",
+        "suggestions": ["Mandi bhav", "Anudan yojana"]
+      },
+      {
+        "id": "login",
+        "keywords": ["login", "sign in", "otp", "customer login", "farmer login", "b2c", "account", "profile"],
+        "answer": "Choose Customer to sign in as a farmer using your registered mobile number. After login, you can access protected product and dealer details and manage your profile.",
+        "linkLabel": "Open login",
+        "link": "/login",
+        "suggestions": ["Dealer registration", "Company registration"]
+      },
+      {
+        "id": "dealer-registration",
+        "keywords": ["dealer registration", "register dealer", "business registration", "b2b registration", "become dealer", "sell products", "b2b marketplace"],
+        "answer": "Register as a B2B dealer with firm, proprietor, category, brand, and location details. Dealers can manage assigned brands and products and use the B2B marketplace.",
+        "linkLabel": "Register as dealer",
+        "link": "/register-brand",
+        "suggestions": ["Company registration", "Subscription plans"]
+      },
+      {
+        "id": "company-registration",
+        "keywords": ["company registration", "register company", "brand owner", "manufacturer registration", "company account", "create company"],
+        "answer": "Register a company account to manage your brands, products, dealers, profile, and subscription from the company dashboard.",
+        "linkLabel": "Register company",
+        "link": "/register-company",
+        "suggestions": ["Dealer registration", "Subscription plans"]
+      },
+      {
+        "id": "subscriptions",
+        "keywords": ["subscription", "subscriptions", "plan", "plans", "pricing", "trial", "renewal", "expiry", "payment"],
+        "answer": "Dealer and company accounts can review available plans, current subscription status, expiry dates, and subscription history from their dashboards.",
+        "linkLabel": "Open login",
+        "link": "/login",
+        "suggestions": ["Dealer registration", "Company registration"]
+      },
+      {
+        "id": "support",
+        "keywords": ["help", "support", "contact", "contact us", "phone", "call", "whatsapp", "issue", "problem", "complaint"],
+        "answer": "Our support team is available by phone or WhatsApp. You can also use the Contact page to send a message.",
+        "linkLabel": "Contact support",
+        "link": "/contact",
+        "suggestions": ["Browse products", "Customer login"]
+      },
+      {
+        "id": "greeting",
+        "keywords": ["hello", "hi", "hey", "namaste", "good morning", "good evening"],
+        "answer": "Namaste! How can I help you with Agri HiTech Kisan today?",
+        "suggestions": ["Browse products", "Mandi bhav", "Anudan yojana", "Find dealers"]
+      }
+    ]
+  }
+}

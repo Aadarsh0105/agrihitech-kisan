@@ -83,6 +83,7 @@ import { AnudanYojanaDetail } from './pages/user/AnudanYojanaDetail';
 import { UserProductDetails } from './pages/user/ProductDetails';
 import { UserCategoryDetail } from './pages/user/CategoryDetail';
 import { UserBrandDetail } from './pages/user/BrandDetail';
+import { FloatingActions } from './components/layout/FloatingActions';
 
 export function App() {
   return (
@@ -192,6 +193,7 @@ export function App() {
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>
+            <FloatingActions />
           </BrowserRouter>
         </LanguageProvider>
       </LocationProvider>

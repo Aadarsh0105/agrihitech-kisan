@@ -13,6 +13,7 @@ import { NewsSection } from '../components/home/NewsSection';
 import { Link } from 'react-router-dom';
 import { MobileAppShowcase } from '../components/home/MobileAppShowcase';
 import { PlatformFeatures } from '../components/home/PlatformFeatures';
+import { PartnerRegistration } from '../components/home/PartnerRegistration';
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { fetchHomeData } from "../redux/home/homeSlice";
@@ -53,6 +54,7 @@ const categories: Category[] =
       <HeroCarousel banners={banners} />
       {/* <GlobalSearch /> */}
 
+      <PartnerRegistration />
       <PlatformFeatures features={platformFeatures} />
 
       <Section
