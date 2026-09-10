@@ -27,6 +27,7 @@ const searchRoute = require("./modules/search/search.routes")
 const newsRoutes = require("./modules/news/news.routes")
 const schemeRoutes = require("./modules/scheme/scheme.routes")
 const adminAccountRoutes = require("./modules/adminAccount/adminAccount.routes")
+const companyRoutes = require("./modules/company/company.routes")
 
 // ✅ API Routes
 app.use("/api/auth", authRoutes);
@@ -39,6 +40,7 @@ app.use("/api/subscription", subscriptionRoutes)
 app.use("/api/news", newsRoutes)
 app.use("/api/schemes", schemeRoutes)
 app.use("/api/admin/accounts", adminAccountRoutes)
+app.use("/api/company", companyRoutes)
 app.use("/api", searchRoute)
 app.get("/delete-account", (req, res) => {
   res.sendFile(

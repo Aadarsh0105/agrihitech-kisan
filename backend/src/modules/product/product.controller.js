@@ -74,7 +74,8 @@ exports.updateProduct = async (req, res) => {
     const product = await productService.updateProduct(
       req.params.id,
       req.body,
-      req.files
+      req.files,
+      req.user
     );
 
     res.json({
@@ -91,7 +92,7 @@ exports.updateProduct = async (req, res) => {
 // 🔹 Delete
 exports.deleteProduct = async (req, res) => {
   try {
-    await productService.deleteProduct(req.params.id);
+    await productService.deleteProduct(req.params.id, req.user);
 
     res.json({
       message: "Product deleted successfully"
@@ -119,5 +120,14 @@ exports.getProductsByCategory = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+exports.getCompanyProducts = async (req, res) => {
+  try {
+    const result = await productService.getCompanyProducts(req.user._id, req.query);
+    res.json({ message: "Company products fetched successfully", ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

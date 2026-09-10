@@ -72,9 +72,9 @@ exports.isBrandManager = (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    if (!["B2B", "COMPANY", "ADMIN"].includes(req.user.role)) {
+    if (!["B2B", "ADMIN"].includes(req.user.role)) {
       return res.status(403).json({
-        message: "Access denied. Only B2B, COMPANY, or ADMIN users can manage brands"
+        message: "Access denied. Only B2B or ADMIN users can manage brands"
       });
     }
 

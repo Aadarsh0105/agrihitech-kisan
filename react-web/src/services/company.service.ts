@@ -5,7 +5,7 @@ export interface CompanyProfileDraft { companyName: string; contactPerson: strin
 export interface CompanyDealerApi { _id: string; firmName?: string; proprietorName?: string; mobile: string; companyDealerStatus: 'ACTIVE' | 'SUSPENDED'; categories?: string[]; location?: { state?: string; district?: string; village?: string }; }
 export interface CompanyBrandApi { _id: string; name: string; image: string; category?: { _id: string; name: string }; createdBy?: { role?: string }; }
 export interface CompanyProductApi { _id: string; name: string; description?: string; price?: number; quantity?: number; unit?: string; images?: Array<{ url: string }>; brand?: Array<{ _id: string; name: string }>; companyBrand?: { _id: string; companyName: string }; category?: { _id: string; name: string }; createdBy?: { role?: string; firmName?: string; proprietorName?: string; companyName?: string }; }
-export interface CompanyProductDraft { name: string; brand: string; category: string; description: string; price: number; quantity: number; unit: string; images: File[]; }
+export interface CompanyProductDraft { name: string; category: string; description: string; images: File[]; }
 
 export async function getCompanyProfile() { const { data } = await api.get<{ user: CompanyProfileApi }>('/auth/me'); return data.user; }
 export async function updateCompanyProfile(payload: CompanyProfileDraft) {
@@ -21,7 +21,7 @@ export async function updateCompanyProfile(payload: CompanyProfileDraft) {
   return data.user;
 }
 export async function getCompanyDealers() {
-  const { data } = await api.get<{ dealers: CompanyDealerApi[] }>('/brands/my-dealers');
+  const { data } = await api.get<{ dealers: CompanyDealerApi[] }>('/company/dealers');
   return data.dealers;
 }
 export async function getCompanyBrands() { const { data } = await api.get<{ brands: CompanyBrandApi[] }>('/brands/my-brands', { params: { page: 1, limit: 100 } }); return data.brands; }
@@ -33,23 +33,11 @@ export async function assignCompanyDealer(mobile: string) { await api.post('/com
 export async function setCompanyDealerStatus(id: string, status: CompanyDealerApi['companyDealerStatus']) { await api.patch(`/company/dealers/${id}/status`, { status }); }
 export async function removeCompanyDealer(id: string) { await api.delete(`/company/dealers/${id}`); }
 export async function getCompanyProducts() {
-  const brands = await getCompanyBrands();
-  const responses = await Promise.all(
-    brands.map((brand) => api.get<{ products: CompanyProductApi[] }>(`/brands/${brand._id}/my-products`, {
-      params: { page: 1, limit: 100 },
-    })),
-  );
-
-  return responses.flatMap((response, index) =>
-    (response.data.products ?? []).map((product) => ({
-      ...product,
-      brand: [brands[index]],
-      category: product.category ?? brands[index].category,
-    })),
-  );
+  const { data } = await api.get<{ products: CompanyProductApi[] }>('/products/company/mine', { params: { page: 1, limit: 100 } });
+  return data.products || [];
 }
 
-function productData(draft: CompanyProductDraft) { const data = new FormData(); data.append('name', draft.name); data.append('brand', draft.brand); data.append('category', draft.category); data.append('description', draft.description); data.append('price', String(draft.price)); data.append('quantity', String(draft.quantity)); data.append('unit', draft.unit); draft.images.forEach((image) => data.append('images', image)); return data; }
+function productData(draft: CompanyProductDraft) { const data = new FormData(); data.append('name', draft.name.trim()); data.append('category', draft.category); if (draft.description.trim()) data.append('description', draft.description.trim()); draft.images.forEach((image) => data.append('images', image)); return data; }
 export async function createCompanyProduct(draft: CompanyProductDraft) { await api.post('/products/create', productData(draft), { headers: { 'Content-Type': 'multipart/form-data' } }); }
 export async function updateCompanyProduct(id: string, draft: CompanyProductDraft) { await api.put(`/products/${id}`, productData(draft), { headers: { 'Content-Type': 'multipart/form-data' } }); }
 export async function deleteCompanyProduct(id: string) { await api.delete(`/products/${id}`); }

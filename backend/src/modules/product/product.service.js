@@ -56,7 +56,14 @@ exports.createProduct = async (data, files, userId, userRole) => {
   // 🔥 validate brand
   let brandData;
 
-  if (userRole === "ADMIN") {
+  if (userRole === "COMPANY") {
+    if (!data.category) throw new Error("Category is required");
+    if (!files || files.length === 0) throw new Error("Product image is required");
+    delete data.price;
+    delete data.quantity;
+    delete data.unit;
+    brandData = [];
+  } else if (userRole === "ADMIN") {
     if (!Array.isArray(data.brand) || data.brand.length === 0) {
       throw new Error("Admin must provide brand array");
     }
@@ -102,11 +109,26 @@ exports.createProduct = async (data, files, userId, userRole) => {
   const product = await Product.create({
     ...data,
     brand: brandData,
+    companyBrand: userRole === "COMPANY" ? userId : null,
     images,
     createdBy: userId
   });
 
   return product;
+};
+
+exports.getCompanyProducts = async (userId, query = {}) => {
+  const { page = 1, limit = 100, search = "" } = query;
+  const filter = { companyBrand: userId, name: { $regex: search, $options: "i" } };
+  const products = await Product.find(filter)
+    .populate("companyBrand", "companyName profileimage")
+    .populate("category", "name")
+    .populate("createdBy", "role companyName")
+    .sort({ createdAt: -1 })
+    .skip((Number(page) - 1) * Number(limit))
+    .limit(Number(limit));
+  const total = await Product.countDocuments(filter);
+  return { products, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) };
 };
 
 
@@ -120,6 +142,7 @@ exports.getAllProducts = async (query) => {
 
   const products = await Product.find(filter)
     .populate("brand", "name image")
+    .populate("companyBrand", "companyName profileimage")
     .populate("category", "name")
     .populate("subCategory", "name")
     .skip((page - 1) * limit)
@@ -195,6 +218,7 @@ exports.getSingleProduct = async (
   const product =
     await Product.findById(id)
       .populate("brand", "name image")
+      .populate("companyBrand", "companyName profileimage")
       .populate("category", "name")
       .populate("subCategory", "name")
       .lean();
@@ -508,11 +532,20 @@ exports.getSingleProduct = async (
 };
 
 // 🔹 Update Product
-exports.updateProduct = async (id, data, files) => {
+exports.updateProduct = async (id, data, files, user) => {
   const product = await Product.findById(id);
 
   if (!product) {
     throw new Error("Product not found");
+  }
+  if (user.role !== "ADMIN" && String(product.createdBy) !== String(user._id)) throw new Error("Access denied");
+  if (user.role === "COMPANY") {
+    delete data.brand;
+    delete data.price;
+    delete data.quantity;
+    delete data.unit;
+    product.brand = [];
+    product.companyBrand = user._id;
   }
 
   // 🔥 validate brand
@@ -557,12 +590,13 @@ exports.updateProduct = async (id, data, files) => {
 
 
 // 🔹 Delete Product
-exports.deleteProduct = async (id) => {
+exports.deleteProduct = async (id, user) => {
   const product = await Product.findById(id);
 
   if (!product) {
     throw new Error("Product not found");
   }
+  if (user.role !== "ADMIN" && String(product.createdBy) !== String(user._id)) throw new Error("Access denied");
 
   // ❌ delete all images from Cloudinary
   if (product.images && product.images.length > 0) {

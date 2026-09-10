@@ -15,6 +15,7 @@ interface ApiProduct {
   _id: string;
   name: string;
   brand?: ApiReference[];
+  companyBrand?: { _id: string; companyName: string; profileimage?: string } | null;
   category?: ApiReference | null;
   subCategory?: ApiReference | null;
   description?: string;
@@ -92,8 +93,8 @@ function mapProduct(product: ApiProduct): Product {
     slug: product._id,
     name: product.name,
     nameHi: product.name,
-    brandId: brands[0]?._id ?? '',
-    brandName: brands.map((brand) => brand.name).join(', '),
+    brandId: brands[0]?._id ?? product.companyBrand?._id ?? '',
+    brandName: brands.map((brand) => brand.name).join(', ') || product.companyBrand?.companyName || '',
     categoryId: product.category?._id ?? '',
     categoryName: product.category?.name ?? '',
     subCategory: product.subCategory?.name,

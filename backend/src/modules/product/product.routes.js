@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const productController = require("./product.controller");
-const { verifyToken, isProductManager } = require("../../middleware/isAdmin");
+const { verifyToken, isProductManager, isCompany } = require("../../middleware/isAdmin");
 const upload = require("../../middleware/upload");
 const { checkSubscription } = require("../../middleware/checkSubscription");
 
@@ -20,6 +20,7 @@ router.post(
 
 // 🔹 Get All
 router.get("/", productController.getAllProducts);
+router.get("/company/mine", verifyToken, isCompany, productController.getCompanyProducts);
 
 // get all products for admin (with pagination, filters, etc.)
 router.get(

@@ -30,6 +30,11 @@ const productSchema = new mongoose.Schema(
         required: true
       }
     ],
+    companyBrand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category"

@@ -238,23 +238,14 @@ exports.registerCompany = async (data) => {
     mobile,
     companyName,
     contactPerson,
-    email,
-    gstNumber,
-    address,
-    state,
-    district,
-    village,
-    pincode
+    email
   } = data;
 
   const requiredFields = {
     mobile,
     companyName,
     contactPerson,
-    state,
-    district,
-    village,
-    pincode
+    email
   };
 
   const missingField = Object.entries(requiredFields)
@@ -268,37 +259,14 @@ exports.registerCompany = async (data) => {
     throw new Error("Mobile number must contain exactly 10 digits");
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+    throw new Error("Enter a valid email address");
+  }
+
   const existing = await User.findOne({ mobile: String(mobile) });
 
   if (existing) {
     throw new Error("User already exists");
-  }
-
-  let lat = 0;
-  let lng = 0;
-
-  try {
-    const response = await axios.get(
-      "https://nominatim.openstreetmap.org/search",
-      {
-        params: {
-          postalcode: pincode,
-          country: "India",
-          format: "json",
-          limit: 1
-        },
-        headers: {
-          "User-Agent": "agrihitech-kisan"
-        }
-      }
-    );
-
-    if (response.data?.length > 0) {
-      lat = parseFloat(response.data[0].lat);
-      lng = parseFloat(response.data[0].lon);
-    }
-  } catch (error) {
-    // Registration remains available when optional geocoding is unavailable.
   }
 
   const user = await User.create({
@@ -306,17 +274,7 @@ exports.registerCompany = async (data) => {
     role: "COMPANY",
     companyName: companyName.trim(),
     contactPerson: contactPerson.trim(),
-    email: email?.trim(),
-    gstNumber: gstNumber?.trim()?.toUpperCase(),
-    address: address?.trim(),
-    location: {
-      state: state.trim(),
-      district: district.trim(),
-      village: village.trim(),
-      pincode: String(pincode).trim(),
-      type: "Point",
-      coordinates: [lng, lat]
-    }
+    email: email.trim()
   });
 
   const token = user.generateAuthToken();

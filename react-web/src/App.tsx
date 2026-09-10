@@ -72,7 +72,6 @@ import { CompanyDashboard } from './pages/company/Dashboard';
 import { CompanyProducts } from './pages/company/Products';
 import { CompanyDealers } from './pages/company/Dealers';
 import { CompanySettings } from './pages/company/Settings';
-import { CompanyBrands } from './pages/company/Brands';
 import { CompanySubscription } from './pages/company/Subscription';
 import { UserProtectedRoute } from './components/user/UserProtectedRoute';
 import { UserProfile } from './pages/user/Profile';
@@ -154,7 +153,6 @@ export function App() {
                 <Route element={<CompanyLayout />}>
                   <Route index element={<Navigate to="dashboard" replace />} />
                   <Route path="dashboard" element={<CompanyDashboard />} />
-                  <Route path="brands" element={<CompanyBrands />} />
                   <Route path="products" element={<CompanyProducts />} />
                   <Route path="dealers" element={<CompanyDealers />} />
                   <Route path="subscription" element={<CompanySubscription />} />

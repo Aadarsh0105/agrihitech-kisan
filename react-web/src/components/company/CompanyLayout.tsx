@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { BadgeCheck, Building2, CreditCard, LayoutDashboard, LogOut, Menu, Package, Settings, Store, X } from 'lucide-react';
+import { Building2, CreditCard, LayoutDashboard, LogOut, Menu, Package, Settings, Store, X } from 'lucide-react';
 import { AUTH_CHANGED_EVENT, clearSession, getSessionUser } from '../../services/auth-session';
 
 const links = [
   { label: 'Dashboard', path: '/company/dashboard', icon: LayoutDashboard },
-  { label: 'My Brands', path: '/company/brands', icon: BadgeCheck },
   { label: 'My Products', path: '/company/products', icon: Package },
   { label: 'My Dealers', path: '/company/dealers', icon: Store },
   { label: 'Subscription', path: '/company/subscription', icon: CreditCard },

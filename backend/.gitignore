@@ -26,6 +26,7 @@ build/
 jspm_packages/
 
 # Environment variables
+env
 .env
 .env.*
 !.env.example
@@ -54,4 +55,6 @@ tmp/
 temp/
 
 # Uploads (if you store images locally)
-uploads/
+uploads/env
+.env
+.env.*
