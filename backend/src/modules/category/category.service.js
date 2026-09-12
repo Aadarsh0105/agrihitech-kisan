@@ -128,6 +128,33 @@ exports.getAllCategories = async (query, user) => {
       },
     },
 
+    {
+      $lookup: {
+        from: "users",
+        let: { categoryName: "$name" },
+        pipeline: [
+          {
+            $match: {
+              role: "COMPANY",
+              $expr: {
+                $in: [
+                  { $toLower: "$$categoryName" },
+                  {
+                    $map: {
+                      input: { $ifNull: ["$categories", []] },
+                      as: "companyCategory",
+                      in: { $toLower: "$$companyCategory" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        as: "companyBrands"
+      }
+    },
+
     // 🔥 Products lookup (for B2C admin product count)
     {
       $lookup: {
@@ -160,7 +187,9 @@ exports.getAllCategories = async (query, user) => {
           },
         },
 
-        totalBrands: { $size: "$brands" },
+        totalBrands: {
+          $add: [{ $size: "$brands" }, { $size: "$companyBrands" }]
+        },
 
         // 🔥 New field
         productCount: { $size: "$products" },
@@ -170,6 +199,7 @@ exports.getAllCategories = async (query, user) => {
     {
       $project: {
         brands: 0,
+        companyBrands: 0,
         products: 0,
       },
     },
@@ -259,6 +289,9 @@ exports.getBrandsByCategory = async (categoryId, query) => {
     matchCondition.createdBy = new mongoose.Types.ObjectId(adminId);
   }
 
+  const category = await Category.findById(categoryId).select("name").lean();
+  if (!category) throw new Error("Category not found");
+
   const brands = await Brand.aggregate([
     {
       $match: matchCondition
@@ -316,18 +349,63 @@ exports.getBrandsByCategory = async (categoryId, query) => {
       }
     },
 
-    { $sort: { createdAt: -1 } },
-    { $skip: (page - 1) * limit },
-    { $limit: parseInt(limit) }
+    { $sort: { createdAt: -1 } }
   ]);
 
-  const total = await Brand.countDocuments(matchCondition);
+  let companyBrands = [];
+  if (isAdmin !== "true") {
+    const escapedCategoryName = category.name.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+    companyBrands = await User.aggregate([
+      {
+        $match: {
+          role: "COMPANY",
+          categories: { $regex: new RegExp("^" + escapedCategoryName + "$", "i") }
+        }
+      },
+      {
+        $lookup: {
+          from: "products",
+          let: { companyId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$companyBrand", "$$companyId"] },
+                    { $eq: ["$category", new mongoose.Types.ObjectId(categoryId)] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "companyProducts"
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: "$companyName",
+          image: "$profileimage",
+          category: { _id: category._id, name: category.name },
+          productCount: { $size: "$companyProducts" },
+          isCompany: { $literal: true },
+          createdAt: 1
+        }
+      }
+    ]);
+  }
+
+  const combinedBrands = [...brands, ...companyBrands]
+    .sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0));
+  const numericPage = Number(page);
+  const numericLimit = parseInt(limit);
+  const offset = (numericPage - 1) * numericLimit;
 
   return {
-    brands,
-    total,
-    page: Number(page),
-    totalPages: Math.ceil(total / limit),
+    brands: combinedBrands.slice(offset, offset + numericLimit),
+    total: combinedBrands.length,
+    page: numericPage,
+    totalPages: Math.ceil(combinedBrands.length / numericLimit),
   };
 };
 
@@ -645,22 +723,78 @@ exports.getCategoriesByRole = async (query, user) => {
     name: { $regex: search, $options: "i" }
   };
 
-  // Only selected categories for B2B
-  if (user.role === "B2B") {
+  // Only selected categories for Seller and Company accounts
+  if (user.role === "B2B" || user.role === "COMPANY") {
     matchStage = {
       ...matchStage,
       name: {
-        $in: user.categories.filter(cat =>
+        $in: (user.categories || []).filter(cat =>
           cat.toLowerCase().includes(search.toLowerCase())
         )
       }
     };
   }
 
-  const categories = await Category.find(matchStage)
-    .sort({ createdAt: -1 })
-    .skip((page - 1) * Number(limit))
-    .limit(Number(limit));
+  const categories = await Category.aggregate([
+    { $match: matchStage },
+    {
+      $lookup: {
+        from: "brands",
+        localField: "_id",
+        foreignField: "category",
+        as: "brands"
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        let: { categoryName: "$name" },
+        pipeline: [
+          {
+            $match: {
+              role: "COMPANY",
+              $expr: {
+                $in: [
+                  { $toLower: "$$categoryName" },
+                  {
+                    $map: {
+                      input: { $ifNull: ["$categories", []] },
+                      as: "companyCategory",
+                      in: { $toLower: "$$companyCategory" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        as: "companyBrands"
+      }
+    },
+    {
+      $addFields: {
+        brandIds: {
+          $map: {
+            input: "$brands",
+            as: "brand",
+            in: "$$brand._id"
+          }
+        },
+        totalBrands: {
+          $add: [{ $size: "$brands" }, { $size: "$companyBrands" }]
+        }
+      }
+    },
+    {
+      $project: {
+        brands: 0,
+        companyBrands: 0
+      }
+    },
+    { $sort: { createdAt: -1 } },
+    { $skip: (Number(page) - 1) * Number(limit) },
+    { $limit: Number(limit) }
+  ]);
 
   const total = await Category.countDocuments(matchStage);
 

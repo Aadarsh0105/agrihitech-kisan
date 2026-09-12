@@ -343,7 +343,24 @@ exports.getAllBrands = async (query, user) => {
     },
   ]);
 
-  const totalBrands = await Brand.countDocuments(filter);
+  if (assignable === "true") {
+    const companies = await User.find({
+      role: "COMPANY",
+      companyName: { $regex: search, $options: "i" }
+    }).select("companyName profileimage categories createdAt").lean();
+
+    brands.push(...companies.map((company) => ({
+      _id: company._id,
+      name: company.companyName,
+      image: company.profileimage,
+      categories: company.categories || [],
+      productCount: 0,
+      isCompany: true,
+      createdAt: company.createdAt
+    })));
+  }
+
+  const totalBrands = brands.length;
 
   const totalProducts = await Product.countDocuments(
     Object.keys(productMatch).length ? productMatch : {}
@@ -435,12 +452,42 @@ exports.deleteBrand = async (id) => {
 exports.getProductsByBrand = async (brandId, query, user) => {
   const { page = 1, limit = 10, search = "" } = query;
 
-  // console.log("Received brandId:", brandId);
-
   const brand = await Brand.findById(brandId);
 
   if (!brand) {
-    throw new Error(`Brand not found for ID: ${brandId}`);
+    const company = await User.findOne({ _id: brandId, role: "COMPANY" })
+      .select("companyName profileimage categories")
+      .lean();
+
+    if (!company) {
+      throw new Error("Brand not found for ID: " + brandId);
+    }
+
+    const companyFilter = {
+      companyBrand: company._id,
+      name: { $regex: search, $options: "i" }
+    };
+    const products = await Product.find(companyFilter)
+      .populate("createdBy", "name role companyName")
+      .populate("companyBrand", "companyName profileimage")
+      .populate("category", "name")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+    const total = await Product.countDocuments(companyFilter);
+
+    return {
+      brand: {
+        _id: company._id,
+        name: company.companyName,
+        image: company.profileimage,
+        isCompany: true
+      },
+      products,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   let creatorIds = [];

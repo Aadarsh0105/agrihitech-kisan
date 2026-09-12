@@ -160,19 +160,35 @@ exports.registerB2B = async (data) => {
   }
 
   const selectedBrandIds = [...new Set(Array.isArray(dealerBrands) ? dealerBrands : [])];
+  let selectedCompanyId = null;
   if (selectedBrandIds.length) {
-    const allowedCreators = await User.find({ role: { $in: ["ADMIN", "COMPANY"] } }).distinct("_id");
-    const selectedBrands = await Brand.find({
-      _id: { $in: selectedBrandIds },
-      createdBy: { $in: allowedCreators }
-    }).populate("category", "name");
-    if (selectedBrands.length !== selectedBrandIds.length) {
+    const [adminIds, selectedBrands, selectedCompanies] = await Promise.all([
+      User.find({ role: "ADMIN" }).distinct("_id"),
+      Brand.find({ _id: { $in: selectedBrandIds } }).populate("category", "name"),
+      User.find({ _id: { $in: selectedBrandIds }, role: "COMPANY" })
+        .select("categories")
+        .lean()
+    ]);
+    const allowedBrands = selectedBrands.filter((brand) =>
+      adminIds.some((adminId) => String(adminId) === String(brand.createdBy))
+    );
+    if (allowedBrands.length + selectedCompanies.length !== selectedBrandIds.length) {
       throw new Error("One or more selected brands are invalid");
     }
+    if (selectedCompanies.length > 1) {
+      throw new Error("Only one company brand can be selected");
+    }
     const selectedCategories = (categories || []).map((name) => name.toLowerCase());
-    if (selectedCategories.length && selectedBrands.some((brand) => !selectedCategories.includes(brand.category?.name?.toLowerCase()))) {
+    if (selectedCategories.length && allowedBrands.some((brand) => !selectedCategories.includes(brand.category?.name?.toLowerCase()))) {
       throw new Error("Selected brands must belong to selected categories");
     }
+    if (selectedCategories.length && selectedCompanies.some((company) =>
+      !(company.categories || []).some((name) => selectedCategories.includes(name.toLowerCase()))
+    )) {
+      throw new Error("Selected company must belong to selected categories");
+    }
+    selectedCompanyId = selectedCompanies[0]?._id || null;
+    selectedBrandIds.splice(0, selectedBrandIds.length, ...allowedBrands.map((brand) => String(brand._id)));
   }
 
   // 🔹 Get Lat/Lng from Pincode
@@ -212,6 +228,7 @@ exports.registerB2B = async (data) => {
 
     categories: categories || [],
     dealerBrands: selectedBrandIds,
+    company: selectedCompanyId,
 
     location: {
       state,
@@ -233,19 +250,20 @@ exports.registerB2B = async (data) => {
 };
 
 // Company Register
-exports.registerCompany = async (data) => {
+exports.registerCompany = async (data, file) => {
   const {
-    mobile,
-    companyName,
-    contactPerson,
-    email
+      mobile,
+      companyName,
+      contactPerson,
+      email,
+      categories
   } = data;
 
   const requiredFields = {
     mobile,
-    companyName,
-    contactPerson,
-    email
+      companyName,
+      contactPerson,
+      categories: Array.isArray(categories) && categories.length ? categories : null
   };
 
   const missingField = Object.entries(requiredFields)
@@ -259,9 +277,25 @@ exports.registerCompany = async (data) => {
     throw new Error("Mobile number must contain exactly 10 digits");
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
-    throw new Error("Enter a valid email address");
-  }
+    if (!file) {
+      throw new Error("Company logo is required");
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+      throw new Error("Enter a valid email address");
+    }
+
+    const selectedCategories = Array.isArray(categories)
+      ? categories
+      : categories ? [categories] : [];
+
+    if (selectedCategories.length < 1) {
+      throw new Error("Select at least one category");
+    }
+
+    if (selectedCategories.length > 2) {
+      throw new Error("Maximum 2 categories allowed");
+    }
 
   const existing = await User.findOne({ mobile: String(mobile) });
 
@@ -272,9 +306,12 @@ exports.registerCompany = async (data) => {
   const user = await User.create({
     mobile: String(mobile),
     role: "COMPANY",
-    companyName: companyName.trim(),
-    contactPerson: contactPerson.trim(),
-    email: email.trim()
+      companyName: companyName.trim(),
+      contactPerson: contactPerson.trim(),
+      email: email ? email.trim() : "",
+      categories: selectedCategories,
+      profileimage: file.path,
+      public_id: file.filename
   });
 
   const token = user.generateAuthToken();

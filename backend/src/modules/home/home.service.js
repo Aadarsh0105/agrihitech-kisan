@@ -25,6 +25,33 @@ exports.getHomeData = async (userId) => {
     },
 
     {
+      $lookup: {
+        from: "users",
+        let: { categoryName: "$name" },
+        pipeline: [
+          {
+            $match: {
+              role: "COMPANY",
+              $expr: {
+                $in: [
+                  { $toLower: "$$categoryName" },
+                  {
+                    $map: {
+                      input: { $ifNull: ["$categories", []] },
+                      as: "companyCategory",
+                      in: { $toLower: "$$companyCategory" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        as: "companyBrands"
+      }
+    },
+
+    {
       $addFields: {
         brandIds: {
           $map: {
@@ -33,13 +60,16 @@ exports.getHomeData = async (userId) => {
             in: "$$b._id"
           }
         },
-        totalBrands: { $size: "$brands" }
+        totalBrands: {
+          $add: [{ $size: "$brands" }, { $size: "$companyBrands" }]
+        }
       }
     },
 
     {
       $project: {
-        brands: 0 // optional (hide full brand data)
+        brands: 0, // optional (hide full brand data)
+        companyBrands: 0
       }
     }
   ]);
