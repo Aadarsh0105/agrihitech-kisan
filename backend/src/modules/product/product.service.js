@@ -323,7 +323,7 @@ exports.getSingleProduct = async (
           },
 
           {
-            $limit: 3
+            $limit: 10
           }
         ]);
 
@@ -352,7 +352,7 @@ exports.getSingleProduct = async (
               mobile
               location
             `)
-            .limit(3)
+            .limit(10)
             .lean();
 
         // 🔥 MANUAL DISTANCE CALCULATION
