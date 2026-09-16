@@ -416,9 +416,18 @@ exports.getMyCategories = async (query, userId) => {
 
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  const matchStage = {
+  const user = await User.findById(userId).select("role categories").lean();
+
+  let matchStage = {
     name: { $regex: search, $options: "i" }
   };
+
+  if (user && ["B2B", "COMPANY"].includes(user.role)) {
+    const registeredCategories = (user.categories || []).filter(category =>
+      category.toLowerCase().includes(search.toLowerCase())
+    );
+    matchStage = { name: { $in: registeredCategories } };
+  }
 
   const categories = await Category.aggregate([
     {
@@ -636,9 +645,18 @@ exports.getMyBrandsByCategory = async (categoryId, query, userId) => {
 exports.getUserCategories = async (query) => {
   const { page = 1, limit = 10, search = "" } = query;
 
-  const matchStage = {
+  const user = await User.findById(userId).select("role categories").lean();
+
+  let matchStage = {
     name: { $regex: search, $options: "i" }
   };
+
+  if (user && ["B2B", "COMPANY"].includes(user.role)) {
+    const registeredCategories = (user.categories || []).filter(category =>
+      category.toLowerCase().includes(search.toLowerCase())
+    );
+    matchStage = { name: { $in: registeredCategories } };
+  }
 
   const categories = await Category.aggregate([
     { $match: matchStage },
