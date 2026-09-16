@@ -259,11 +259,15 @@ exports.registerCompany = async (data, file) => {
       categories
   } = data;
 
+  const selectedCategories = Array.isArray(categories)
+    ? categories
+    : categories ? [categories] : [];
+
   const requiredFields = {
     mobile,
       companyName,
       contactPerson,
-      categories: Array.isArray(categories) && categories.length ? categories : null
+      categories: selectedCategories.length ? selectedCategories : null
   };
 
   const missingField = Object.entries(requiredFields)
@@ -285,16 +289,12 @@ exports.registerCompany = async (data, file) => {
       throw new Error("Enter a valid email address");
     }
 
-    const selectedCategories = Array.isArray(categories)
-      ? categories
-      : categories ? [categories] : [];
-
     if (selectedCategories.length < 1) {
       throw new Error("Select at least one category");
     }
 
-    if (selectedCategories.length > 2) {
-      throw new Error("Maximum 2 categories allowed");
+    if (selectedCategories.length > 1) {
+      throw new Error("Only 1 category allowed");
     }
 
   const existing = await User.findOne({ mobile: String(mobile) });
