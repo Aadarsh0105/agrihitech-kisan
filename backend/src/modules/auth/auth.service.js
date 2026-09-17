@@ -144,9 +144,17 @@ exports.registerB2B = async (data) => {
     district,
     village,
     pincode,
-    categories,
+    categories: submittedCategories,
     dealerBrands
   } = data;
+
+  const categories = Array.isArray(submittedCategories)
+    ? submittedCategories
+    : submittedCategories ? [submittedCategories] : [];
+
+  if (!categories.length || categories.some(category => typeof category !== "string" || !category.trim())) {
+    throw new Error("Select at least one category");
+  }
 
   const existing = await User.findOne({ mobile });
 
@@ -205,6 +213,7 @@ exports.registerB2B = async (data) => {
           format: "json",
           limit: 1
         },
+        timeout: 5000,
         headers: {
           "User-Agent": "your-app-name"
         }
