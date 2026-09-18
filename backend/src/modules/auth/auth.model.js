@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
     ref: "User",
     default: null
   },
+  companies: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }],
   companyDealerStatus: {
     type: String,
     enum: ["ACTIVE", "SUSPENDED"],

@@ -1,6 +1,6 @@
 const User = require('../auth/auth.model');
 
-exports.getDealers = userId => User.find({ role: 'B2B', company: userId })
+exports.getDealers = userId => User.find({ role: 'B2B', $or: [{ company: userId }, { companies: userId }] })
   .select('firmName proprietorName mobile email gstNumber address categories location companyDealerStatus createdAt')
   .sort({ createdAt: -1 });
 
@@ -16,13 +16,17 @@ exports.assignDealer = async (userId, mobile) => {
 
 exports.setDealerStatus = async (userId, dealerId, status) => {
   if (!['ACTIVE', 'SUSPENDED'].includes(status)) throw new Error('Invalid dealer status');
-  const dealer = await User.findOneAndUpdate({ _id: dealerId, role: 'B2B', company: userId }, { companyDealerStatus: status }, { new: true });
+  const dealer = await User.findOneAndUpdate({ _id: dealerId, role: 'B2B', $or: [{ company: userId }, { companies: userId }] }, { companyDealerStatus: status }, { new: true });
   if (!dealer) throw new Error('Company dealer not found');
   return dealer;
 };
 
 exports.removeDealer = async (userId, dealerId) => {
-  const dealer = await User.findOneAndUpdate({ _id: dealerId, role: 'B2B', company: userId }, { $set: { company: null, companyDealerStatus: 'ACTIVE' } }, { new: true });
+  const dealer = await User.findOne({ _id: dealerId, role: 'B2B', $or: [{ company: userId }, { companies: userId }] });
   if (!dealer) throw new Error('Company dealer not found');
+  dealer.companies = (dealer.companies || []).filter(companyId => String(companyId) !== String(userId));
+  if (String(dealer.company) === String(userId)) dealer.company = dealer.companies[0] || null;
+  dealer.companyDealerStatus = 'ACTIVE';
+  await dealer.save();
   return dealer;
 };

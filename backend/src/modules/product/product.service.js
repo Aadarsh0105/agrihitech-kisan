@@ -63,6 +63,15 @@ exports.createProduct = async (data, files, userId, userRole) => {
     delete data.quantity;
     delete data.unit;
     brandData = [];
+  } else if (userRole === "ADMIN" && data.companyBrand) {
+    const company = await User.findOne({ _id: data.companyBrand, role: "COMPANY" });
+    if (!company) throw new Error("Invalid company brand");
+    const category = await Category.findById(data.category);
+    if (!category || !(company.categories || []).some(name => name.trim().toLowerCase() === category.name.trim().toLowerCase())) {
+      throw new Error("Selected company must belong to selected category");
+    }
+    brandData = [];
+    data.companyBrand = company._id;
   } else if (userRole === "ADMIN") {
     if (!Array.isArray(data.brand) || data.brand.length === 0) {
       throw new Error("Admin must provide brand array");
@@ -109,7 +118,7 @@ exports.createProduct = async (data, files, userId, userRole) => {
   const product = await Product.create({
     ...data,
     brand: brandData,
-    companyBrand: userRole === "COMPANY" ? userId : null,
+    companyBrand: userRole === "COMPANY" ? userId : userRole === "ADMIN" ? data.companyBrand || null : null,
     images,
     createdBy: userId
   });

@@ -168,7 +168,7 @@ exports.registerB2B = async (data) => {
   }
 
   const selectedBrandIds = [...new Set(Array.isArray(dealerBrands) ? dealerBrands : [])];
-  let selectedCompanyId = null;
+  let selectedCompanyIds = [];
   if (selectedBrandIds.length) {
     const [adminIds, selectedBrands, selectedCompanies] = await Promise.all([
       User.find({ role: "ADMIN" }).distinct("_id"),
@@ -183,9 +183,6 @@ exports.registerB2B = async (data) => {
     if (allowedBrands.length + selectedCompanies.length !== selectedBrandIds.length) {
       throw new Error("One or more selected brands are invalid");
     }
-    if (selectedCompanies.length > 1) {
-      throw new Error("Only one company brand can be selected");
-    }
     const selectedCategories = (categories || []).map((name) => name.toLowerCase());
     if (selectedCategories.length && allowedBrands.some((brand) => !selectedCategories.includes(brand.category?.name?.toLowerCase()))) {
       throw new Error("Selected brands must belong to selected categories");
@@ -195,7 +192,7 @@ exports.registerB2B = async (data) => {
     )) {
       throw new Error("Selected company must belong to selected categories");
     }
-    selectedCompanyId = selectedCompanies[0]?._id || null;
+    selectedCompanyIds = selectedCompanies.map((company) => company._id);
     selectedBrandIds.splice(0, selectedBrandIds.length, ...allowedBrands.map((brand) => String(brand._id)));
   }
 
@@ -237,7 +234,8 @@ exports.registerB2B = async (data) => {
 
     categories: categories || [],
     dealerBrands: selectedBrandIds,
-    company: selectedCompanyId,
+    company: selectedCompanyIds[0] || null,
+    companies: selectedCompanyIds,
 
     location: {
       state,
