@@ -653,7 +653,7 @@ exports.getProductsByCategory = async (categoryId, query) => {
 
     {
       $match: {
-        "creator.role": "ADMIN"
+        "creator.role": { $in: ["ADMIN", "COMPANY"] }
       }
     },
 
@@ -706,7 +706,7 @@ exports.getProductsByCategory = async (categoryId, query) => {
     { $unwind: "$creator" },
     {
       $match: {
-        "creator.role": "ADMIN"
+        "creator.role": { $in: ["ADMIN", "COMPANY"] }
       }
     },
     {

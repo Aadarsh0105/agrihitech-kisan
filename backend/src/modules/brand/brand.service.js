@@ -596,17 +596,29 @@ exports.getBrandsByProductId = async (productId) => {
         path: "category",
         select: "name"
       }
-    });
+    }).populate("companyBrand", "companyName profileimage categories");
 
   if (!product) {
     throw new Error("Product not found");
   }
 
+  const brands = (product.brand || []).filter(Boolean);
+  if (product.companyBrand) {
+    const company = product.companyBrand;
+    brands.push({
+      _id: company._id,
+      name: company.companyName,
+      image: company.profileimage,
+      categories: company.categories || [],
+      isCompany: true
+    });
+  }
+
   return {
     productId: product._id,
     productName: product.name,
-    totalBrands: product.brand.length,
-    brands: product.brand
+    totalBrands: brands.length,
+    brands
   };
 };
 
