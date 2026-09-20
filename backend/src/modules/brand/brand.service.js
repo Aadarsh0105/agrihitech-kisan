@@ -450,7 +450,9 @@ exports.deleteBrand = async (id) => {
 // 🔥 Get Products by Brand
 
 exports.getProductsByBrand = async (brandId, query, user) => {
-  const { page = 1, limit = 10, search = "" } = query;
+  const { page = 1, limit = 10, search = "", categoryId, subCategoryId } = query;
+  if (categoryId && !mongoose.Types.ObjectId.isValid(categoryId)) throw new Error("Invalid category ID");
+  if (subCategoryId && !mongoose.Types.ObjectId.isValid(subCategoryId)) throw new Error("Invalid subcategory ID");
 
   const brand = await Brand.findById(brandId);
 
@@ -465,7 +467,9 @@ exports.getProductsByBrand = async (brandId, query, user) => {
 
     const companyFilter = {
       companyBrand: company._id,
-      name: { $regex: search, $options: "i" }
+      name: { $regex: search, $options: "i" },
+      ...(categoryId ? { category: categoryId } : {}),
+      ...(subCategoryId ? { subCategory: subCategoryId } : {})
     };
     const products = await Product.find(companyFilter)
       .populate("createdBy", "name role companyName")
@@ -502,7 +506,9 @@ exports.getProductsByBrand = async (brandId, query, user) => {
 
   const filter = {
     brand: { $in: [brandId] },
-    name: { $regex: search, $options: "i" }
+    name: { $regex: search, $options: "i" },
+    ...(categoryId ? { category: categoryId } : {}),
+    ...(subCategoryId ? { subCategory: subCategoryId } : {})
   };
 
   if (user.role !== "ADMIN") {

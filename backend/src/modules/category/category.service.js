@@ -281,7 +281,9 @@ exports.getBrandsByCategory = async (categoryId, query) => {
     page = 1,
     limit = 10,
     isAdmin = "false",
-    adminId
+    adminId,
+    subCategoryId,
+    onlyWithProducts = "false"
   } = query;
 
   const matchCondition = {
@@ -399,7 +401,26 @@ exports.getBrandsByCategory = async (categoryId, query) => {
     ]);
   }
 
-  const combinedBrands = [...brands, ...companyBrands]
+  let visibleBrands = [...brands, ...companyBrands];
+  if (onlyWithProducts === "true") {
+    const productFilter = { category: new mongoose.Types.ObjectId(categoryId) };
+    if (subCategoryId) {
+      if (!mongoose.Types.ObjectId.isValid(subCategoryId)) throw new Error("Invalid subcategory ID");
+      productFilter.subCategory = new mongoose.Types.ObjectId(subCategoryId);
+    }
+    const products = await Product.find(productFilter)
+      .select("brand companyBrand createdBy")
+      .populate("createdBy", "role")
+      .lean();
+    const visibleIds = new Set();
+    products.forEach(product => {
+      if (!["ADMIN", "COMPANY"].includes(product.createdBy?.role)) return;
+      (product.brand || []).forEach(id => visibleIds.add(String(id)));
+      if (product.companyBrand) visibleIds.add(String(product.companyBrand));
+    });
+    visibleBrands = visibleBrands.filter(brand => visibleIds.has(String(brand._id)));
+  }
+  const combinedBrands = visibleBrands
     .sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0));
   const numericPage = Number(page);
   const numericLimit = parseInt(limit);
