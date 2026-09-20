@@ -87,13 +87,27 @@ exports.createProduct = async (data, files, userId, userRole) => {
     }
 
     brandData = data.brand;
+  } else if (userRole === "B2B") {
+    const company = await User.findOne({ _id: data.brand, role: "COMPANY" });
+    if (company) {
+      const seller = await User.findById(userId).select("company companies");
+      const assignedCompanies = [seller?.company, ...(seller?.companies || [])].map(String);
+      if (!assignedCompanies.includes(String(company._id))) throw new Error("Company is not assigned to this seller");
+      const category = await Category.findById(data.category);
+      if (!category || !(company.categories || []).some(name => name.trim().toLowerCase() === category.name.trim().toLowerCase())) {
+        throw new Error("Selected company must belong to selected category");
+      }
+      brandData = [];
+      data.companyBrand = company._id;
+    } else {
+      const brandExists = await Brand.findById(data.brand);
+      if (!brandExists) throw new Error("Invalid Brand ID");
+      brandData = [data.brand];
+      data.companyBrand = null;
+    }
   } else {
     const brandExists = await Brand.findById(data.brand);
-
-    if (!brandExists) {
-      throw new Error("Invalid Brand ID");
-    }
-
+    if (!brandExists) throw new Error("Invalid Brand ID");
     brandData = [data.brand];
   }
 
@@ -123,7 +137,7 @@ exports.createProduct = async (data, files, userId, userRole) => {
   const product = await Product.create({
     ...data,
     brand: brandData,
-    companyBrand: userRole === "COMPANY" ? userId : userRole === "ADMIN" ? data.companyBrand || null : null,
+    companyBrand: userRole === "COMPANY" ? userId : ["ADMIN", "B2B"].includes(userRole) ? data.companyBrand || null : null,
     images,
     createdBy: userId
   });
@@ -563,7 +577,25 @@ exports.updateProduct = async (id, data, files, user) => {
   }
 
   // 🔥 validate brand
-  if (data.brand) {
+  if (user.role === "B2B" && data.brand) {
+    const company = await User.findOne({ _id: data.brand, role: "COMPANY" });
+    if (company) {
+      const seller = await User.findById(user._id).select("company companies");
+      const assignedCompanies = [seller?.company, ...(seller?.companies || [])].map(String);
+      if (!assignedCompanies.includes(String(company._id))) throw new Error("Company is not assigned to this seller");
+      const category = await Category.findById(data.category || product.category);
+      if (!category || !(company.categories || []).some(name => name.trim().toLowerCase() === category.name.trim().toLowerCase())) {
+        throw new Error("Selected company must belong to selected category");
+      }
+      data.brand = [];
+      data.companyBrand = company._id;
+    } else {
+      const brandExists = await Brand.findById(data.brand);
+      if (!brandExists) throw new Error("Invalid Brand ID");
+      data.brand = [brandExists._id];
+      data.companyBrand = null;
+    }
+  } else if (data.brand) {
     const brandExists = await Brand.findById(data.brand);
     if (!brandExists) throw new Error("Invalid Brand ID");
   }

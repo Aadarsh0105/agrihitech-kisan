@@ -2,6 +2,42 @@ const mongoose = require("mongoose");
 const Banner = require("../banner/banner.model");
 const Category = require("../category/category.model");
 const Brand = require("../brand/brand.model");
+const User = require("../auth/auth.model");
+
+
+const getPopularCompanyBrands = async () => User.aggregate([
+  { $match: { role: "COMPANY" } },
+  {
+    $lookup: {
+      from: "products",
+      localField: "_id",
+      foreignField: "companyBrand",
+      as: "companyProducts"
+    }
+  },
+  { $addFields: { totalProducts: { $size: "$companyProducts" } } },
+  { $match: { totalProducts: { $gt: 0 } } },
+  { $sort: { totalProducts: -1, createdAt: -1 } },
+  { $limit: 4 },
+  {
+    $project: {
+      _id: 1,
+      name: "$companyName",
+      image: "$profileimage",
+      totalProducts: 1,
+      createdAt: 1,
+      isCompany: { $literal: true }
+    }
+  }
+]);
+
+const withPopularCompanies = async brands => {
+  const companies = await getPopularCompanyBrands();
+  return [...brands, ...companies]
+    .sort((left, right) => (right.totalProducts || 0) - (left.totalProducts || 0) ||
+      new Date(right.createdAt || 0) - new Date(left.createdAt || 0))
+    .slice(0, 4);
+};
 
 exports.getHomeData = async (userId) => {
 
@@ -138,7 +174,7 @@ exports.getHomeData = async (userId) => {
   return {
     banners,
     categories,
-    brands
+    brands: await withPopularCompanies(brands)
   };
 };
 
@@ -281,6 +317,6 @@ exports.getUserHomeData = async () => {
   return {
     banners,
     categories,
-    brands
+    brands: await withPopularCompanies(brands)
   };
 };
