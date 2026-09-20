@@ -1,87 +1,80 @@
-import React from 'react';
-import { ListTreeIcon } from 'lucide-react';
-import { CrudScreen, type FieldDef } from '../../components/admin/shared/CrudScreen';
-import type { Column } from '../../components/admin/shared/DataTable';
-import { Thumb } from '../../components/admin/shared/Thumb';
-import { Badge, StatusBadge } from '../../components/admin/ui/Badge';
-import { categories, subCategories } from '../../data/admin/catalogue';
-import { statusFilter, statusOptions, newId } from '../../config/admin/options';
-import { formatNumber } from '../../utils/admin/format';
-import { t } from '../../utils/admin/i18n';
-import type { SubCategory } from '../../types/admin';
+﻿import { useEffect, useState } from 'react';
+import api from '../../api/admin/axios';
+import { PageHeader } from '../../components/admin/shared/PageHeader';
+import { Button } from '../../components/admin/ui/Button';
 
-const parentOptions = categories.map((c) => ({ value: c.id, label: t(c.name) }));
-
-const columns: Column<SubCategory>[] = [
-{
-  key: 'name',
-  header: 'Sub category',
-  render: (item) =>
-  <div className="flex items-center gap-3">
-        <Thumb src={item.image} alt={t(item.name)} />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-foreground">{t(item.name)}</p>
-          <p className="truncate font-mono text-[11px] text-muted-foreground">/{item.slug}</p>
-        </div>
-      </div>
-
-},
-{
-  key: 'parent',
-  header: 'Parent category',
-  render: (item) => <Badge tone="primary">{item.parentCategoryName}</Badge>
-},
-{
-  key: 'products',
-  header: 'Products',
-  align: 'right',
-  render: (item) => <span className="text-xs font-medium">{formatNumber(item.productCount)}</span>
-},
-{ key: 'status', header: 'Status', render: (item) => <StatusBadge status={item.status} /> }];
-
-
-const fields: FieldDef[] = [
-{ key: 'parentCategoryId', label: 'Parent category', type: 'select', options: parentOptions, required: true, group: 'Details' },
-{ key: 'slug', label: 'Slug', type: 'text', required: true, group: 'Details' },
-{ key: 'name', label: 'Name', type: 'translated', required: true, full: true, group: 'Details' },
-{ key: 'description', label: 'Description', type: 'translatedArea', full: true, group: 'Details' },
-{ key: 'image', label: 'Image', type: 'image', full: true, group: 'Media' },
-{ key: 'status', label: 'Status', type: 'select', options: statusOptions, group: 'Placement' }];
-
+type Category = { _id: string; name: string };
+type SubCategory = { _id: string; name: string; category: Category };
 
 export function SubCategories() {
-  return (
-    <CrudScreen<SubCategory>
-      title="Sub Category Management"
-      description="Second-level taxonomy mapped to a parent category."
-      endpoint="subCategories"
-      seed={subCategories}
-      columns={columns}
-      fields={fields}
-      createLabel="Add sub category"
-      emptyIcon={ListTreeIcon}
-      searchFields={(item) => `${t(item.name)} ${item.slug} ${item.parentCategoryName}`}
-      filters={[
-      statusFilter,
-      { key: 'parent', label: 'Parent', options: categories.map((c) => ({ value: c.id, label: t(c.name) })) }]
-      }
-      filterPredicates={{
-        status: (item, value) => item.status === value,
-        parent: (item, value) => item.parentCategoryId === value
-      }}
-      rowLabel={(item) => t(item.name)}
-      makeEmpty={() => ({
-        id: newId('sub'),
-        parentCategoryId: categories[0].id,
-        parentCategoryName: t(categories[0].name),
-        name: { en: '' },
-        slug: '',
-        description: { en: '' },
-        image: '',
-        productCount: 0,
-        status: 'draft',
-        seo: { metaTitle: '', metaDescription: '', keywords: [], robots: 'index, follow' }
-      })} />);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [items, setItems] = useState<SubCategory[]>([]);
+  const [categoryId, setCategoryId] = useState('');
+  const [name, setName] = useState('');
+  const [editingId, setEditingId] = useState('');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
+  const load = async () => {
+    try {
+      const [categoryResponse, subCategoryResponse] = await Promise.all([
+        api.get('/categories'), api.get('/subcategories')
+      ]);
+      setCategories((Array.isArray(categoryResponse.data) ? categoryResponse.data : categoryResponse.data.categories || [])
+        .filter((category: Category) => !/medicine/i.test(category.name)));
+      setItems(subCategoryResponse.data.subCategories || []);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to load subcategories');
+    }
+  };
+  useEffect(() => { void load(); }, []);
 
+  const save = async () => {
+    if (!name.trim() || !categoryId) { setError('Select a category and enter a name.'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      const payload = { name: name.trim(), categoryId };
+      if (editingId) await api.put(`/subcategories/${editingId}`, payload);
+      else await api.post('/subcategories', payload);
+      setName(''); setEditingId(''); setCategoryId('');
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to save subcategory');
+    } finally { setSaving(false); }
+  };
+  const remove = async (item: SubCategory) => {
+    if (!window.confirm(`Delete ${item.name}?`)) return;
+    setError('');
+    try { await api.delete(`/subcategories/${item._id}`); await load(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to delete subcategory'); }
+  };
+
+  return <div className="space-y-6">
+    <PageHeader title="Sub Category Management" description="Manage the subcategories shown under each product category." />
+    {error && <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <select className="rounded-xl border border-border bg-background px-3 py-2 text-foreground" value={categoryId} onChange={event => setCategoryId(event.target.value)}>
+          <option value="">Select parent category</option>
+          {categories.map(category => <option key={category._id} value={category._id}>{category.name}</option>)}
+        </select>
+        <input className="rounded-xl border border-border bg-background px-3 py-2 text-foreground" placeholder="Subcategory name, e.g. Wheat" value={name} onChange={event => setName(event.target.value)} />
+      </div>
+      <div className="mt-4 flex gap-2">
+        <Button variant="primary" disabled={saving} onClick={save}>{editingId ? 'Save changes' : 'Add subcategory'}</Button>
+        {editingId && <Button onClick={() => { setEditingId(''); setName(''); setCategoryId(''); }}>Cancel</Button>}
+      </div>
+    </div>
+    <div className="space-y-2">
+      {items.map(item => <div key={item._id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+        <div><p className="font-medium">{item.name}</p><p className="text-sm text-muted-foreground">{item.category?.name}</p></div>
+        <div className="flex gap-2">
+          <Button onClick={() => { setEditingId(item._id); setName(item.name); setCategoryId(item.category?._id || ''); }}>Edit</Button>
+          <Button onClick={() => void remove(item)}>Delete</Button>
+        </div>
+      </div>)}
+      {!items.length && <p className="text-sm text-muted-foreground">No subcategories yet.</p>}
+    </div>
+  </div>;
 }

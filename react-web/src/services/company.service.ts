@@ -3,9 +3,9 @@ import api from '../api/axios';
 export interface CompanyProfileApi { _id: string; mobile: string; companyName: string; contactPerson: string; email?: string; gstNumber?: string; address?: string; profileimage?: string; location?: { state?: string; district?: string; village?: string; pincode?: string }; subscription?: { isActive?: boolean; endDate?: string; planId?: { name?: string } }; }
 export interface CompanyProfileDraft { companyName: string; contactPerson: string; email: string; gstNumber: string; address: string; location: { state: string; district: string; village: string; pincode: string }; profileimage: File | null; }
 export interface CompanyDealerApi { _id: string; firmName?: string; proprietorName?: string; mobile: string; companyDealerStatus: 'ACTIVE' | 'SUSPENDED'; categories?: string[]; location?: { state?: string; district?: string; village?: string }; }
-export interface CompanyBrandApi { _id: string; name: string; image: string; category?: { _id: string; name: string }; createdBy?: { role?: string }; }
-export interface CompanyProductApi { _id: string; name: string; description?: string; price?: number; quantity?: number; unit?: string; images?: Array<{ url: string }>; brand?: Array<{ _id: string; name: string }>; companyBrand?: { _id: string; companyName: string }; category?: { _id: string; name: string }; createdBy?: { role?: string; firmName?: string; proprietorName?: string; companyName?: string }; }
-export interface CompanyProductDraft { name: string; category: string; description: string; images: File[]; }
+export interface CompanyBrandApi { _id: string; name: string; image: string; category?: { _id: string; name: string }; subCategory?: { _id: string; name: string }; createdBy?: { role?: string }; }
+export interface CompanyProductApi { _id: string; name: string; description?: string; price?: number; quantity?: number; unit?: string; images?: Array<{ url: string }>; brand?: Array<{ _id: string; name: string }>; companyBrand?: { _id: string; companyName: string }; category?: { _id: string; name: string }; subCategory?: { _id: string; name: string }; createdBy?: { role?: string; firmName?: string; proprietorName?: string; companyName?: string }; }
+export interface CompanyProductDraft { name: string; category: string; subCategory?: string; description: string; images: File[]; }
 
 export async function getCompanyProfile() { const { data } = await api.get<{ user: CompanyProfileApi }>('/auth/me'); return data.user; }
 export async function updateCompanyProfile(payload: CompanyProfileDraft) {
@@ -37,7 +37,7 @@ export async function getCompanyProducts() {
   return data.products || [];
 }
 
-function productData(draft: CompanyProductDraft) { const data = new FormData(); data.append('name', draft.name.trim()); data.append('category', draft.category); if (draft.description.trim()) data.append('description', draft.description.trim()); draft.images.forEach((image) => data.append('images', image)); return data; }
+function productData(draft: CompanyProductDraft) { const data = new FormData(); data.append('name', draft.name.trim()); data.append('category', draft.category); if (draft.subCategory) data.append('subCategory', draft.subCategory); if (draft.description.trim()) data.append('description', draft.description.trim()); draft.images.forEach((image) => data.append('images', image)); return data; }
 export async function createCompanyProduct(draft: CompanyProductDraft) { await api.post('/products/create', productData(draft), { headers: { 'Content-Type': 'multipart/form-data' } }); }
 export async function updateCompanyProduct(id: string, draft: CompanyProductDraft) { await api.put(`/products/${id}`, productData(draft), { headers: { 'Content-Type': 'multipart/form-data' } }); }
 export async function deleteCompanyProduct(id: string) { await api.delete(`/products/${id}`); }

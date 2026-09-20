@@ -32,6 +32,7 @@ const companyRoutes = require("./modules/company/company.routes")
 // ✅ API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/subcategories", require("./modules/category/subcategory.routes"));
 app.use("/api/products", productRoutes);
 app.use("/api/brands", brandRoutes)
 app.use("/api/banners", bannerRoutes)

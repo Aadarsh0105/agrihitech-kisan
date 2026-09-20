@@ -1,5 +1,6 @@
 const Category = require("./category.model");
 const Product = require("../product/product.model");
+const SubCategory = require("./subcategory.model");
 const cloudinary = require("../../config/cloudinary");
 const mongoose = require("mongoose");
 const Brand = require("../brand/brand.model");
@@ -262,6 +263,9 @@ exports.deleteCategory = async (id) => {
     throw new Error("Category is used in products");
   }
 
+  if (await SubCategory.exists({ category: id })) {
+    throw new Error("Category has subcategories. Delete them first.");
+  }
   // ❌ delete from cloudinary
   if (category.public_id) {
     await cloudinary.uploader.destroy(category.public_id);

@@ -1,6 +1,7 @@
 const Product = require("./product.model");
 const Brand = require("../brand/brand.model");
 const Category = require("../category/category.model");
+const SubCategory = require("../category/subcategory.model");
 const cloudinary = require("../../config/cloudinary");
 const User = require("../auth/auth.model");
 const mongoose = require("mongoose");
@@ -21,7 +22,7 @@ const mongoose = require("mongoose");
 //     }
 //   }
 
-//   // 🔥 handle images
+  // 🔥 handle images
 //   let images = [];
 
 //   if (files && files.length > 0) {
@@ -105,6 +106,10 @@ exports.createProduct = async (data, files, userId, userRole) => {
     }
   }
 
+  if (data.subCategory) {
+    const subCategory = await SubCategory.findById(data.subCategory);
+    if (!subCategory || String(subCategory.category) !== String(data.category)) throw new Error("Invalid subcategory for selected category");
+  }
   // 🔥 handle images
   let images = [];
 
@@ -569,6 +574,10 @@ exports.updateProduct = async (id, data, files, user) => {
     if (!catExists) throw new Error("Invalid Category ID");
   }
 
+  if (data.subCategory) {
+    const subCategory = await SubCategory.findById(data.subCategory);
+    if (!subCategory || String(subCategory.category) !== String(data.category)) throw new Error("Invalid subcategory for selected category");
+  }
   // 🔥 replace images
   if (files && files.length > 0) {
     // ❌ delete old images from Cloudinary
@@ -624,7 +633,7 @@ exports.deleteProduct = async (id, user) => {
 
 // 🔹 Get Products By Category (ADMIN only)
 exports.getProductsByCategory = async (categoryId, query) => {
-  const { page = 1, limit = 10 } = query;
+  const { page = 1, limit = 10, subCategoryId } = query;
 
   // validate category
   const categoryExists = await Category.findById(categoryId);
@@ -633,10 +642,15 @@ exports.getProductsByCategory = async (categoryId, query) => {
     throw new Error("Invalid Category ID");
   }
 
+  const categoryMatch = { category: categoryExists._id };
+  if (subCategoryId) {
+    if (!mongoose.Types.ObjectId.isValid(subCategoryId)) throw new Error("Invalid subcategory ID");
+    categoryMatch.subCategory = new mongoose.Types.ObjectId(subCategoryId);
+  }
   const products = await Product.aggregate([
     {
       $match: {
-        category: categoryExists._id
+        ...categoryMatch
       }
     },
 
@@ -692,7 +706,7 @@ exports.getProductsByCategory = async (categoryId, query) => {
   const total = await Product.aggregate([
     {
       $match: {
-        category: categoryExists._id
+        ...categoryMatch
       }
     },
     {

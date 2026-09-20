@@ -15,6 +15,7 @@ import {
   type CompanyProfileApi,
 } from '../../services/company.service';
 import { Empty, Header } from './Brands';
+import api from '../../api/axios';
 
 const blank: CompanyProductDraft = { name: '', category: '', description: '', images: [] };
 
@@ -22,6 +23,7 @@ export function CompanyProducts() {
   const [products, setProducts] = useState<CompanyProductApi[]>([]);
   const [company, setCompany] = useState<CompanyProfileApi | null>(null);
   const [categories, setCategories] = useState<PublicCategory[]>([]);
+  const [subCategories, setSubCategories] = useState<Array<{ _id: string; name: string }>>([]);
   const [draft, setDraft] = useState<CompanyProductDraft>(blank);
   const [editing, setEditing] = useState<CompanyProductApi | null>(null);
   const [remove, setRemove] = useState<CompanyProductApi | null>(null);
@@ -42,6 +44,13 @@ export function CompanyProducts() {
 
   useEffect(() => { void load(); }, []);
 
+  useEffect(() => {
+    if (!draft.category) { setSubCategories([]); return; }
+    api.get('/subcategories', { params: { categoryId: draft.category } })
+      .then(response => setSubCategories(response.data.subCategories || []))
+      .catch(() => setSubCategories([]));
+  }, [draft.category]);
+
   const create = () => {
     setEditing(null);
     setDraft(blank);
@@ -53,6 +62,7 @@ export function CompanyProducts() {
     setDraft({
       name: item.name,
       category: item.category?._id || '',
+      subCategory: item.subCategory?._id || '',
       description: item.description || '',
       images: [],
     });
@@ -74,7 +84,7 @@ export function CompanyProducts() {
     }
   };
 
-  const cannotSave = saving || !draft.name.trim() || !draft.category || (!editing && draft.images.length === 0);
+  const cannotSave = saving || !draft.name.trim() || !draft.category || (subCategories.length > 0 && !draft.subCategory) || (!editing && draft.images.length === 0);
 
   return <div className="space-y-6">
     <Header
@@ -118,12 +128,17 @@ export function CompanyProducts() {
           <Input value={draft.name} onChange={(e) => setDraft((old) => ({ ...old, name: e.target.value }))} />
         </Field>
         <Field label="Category" required>
-          <Select value={draft.category} onChange={(e) => setDraft((old) => ({ ...old, category: e.target.value }))}>
+          <Select value={draft.category} onChange={(e) => setDraft((old) => ({ ...old, category: e.target.value, subCategory: '' }))}>
             <option value="">Select category</option>
             {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </Select>
         </Field>
-        <Field label={editing ? 'Image (leave empty to keep current)' : 'Image'} required={!editing} className="sm:col-span-2">
+        {subCategories.length > 0 && <Field label="Subcategory" required>
+          <Select value={draft.subCategory || ''} onChange={(e) => setDraft((old) => ({ ...old, subCategory: e.target.value }))}>
+            <option value="">Select subcategory</option>
+            {subCategories.map(item => <option key={item._id} value={item._id}>{item.name}</option>)}
+          </Select>
+        </Field>}        <Field label={editing ? 'Image (leave empty to keep current)' : 'Image'} required={!editing} className="sm:col-span-2">
           <Input type="file" multiple accept="image/*" onChange={(e) => setDraft((old) => ({ ...old, images: Array.from(e.target.files || []) }))} />
         </Field>
         <Field label="Description (optional)" className="sm:col-span-2">

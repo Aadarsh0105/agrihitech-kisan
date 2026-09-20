@@ -50,6 +50,7 @@ const emptyDraft = {
   name: "",
   brand: "",
   category: "",
+  subCategory: "",
   price: 0,
   description: "",
   quantity: 0,
@@ -81,6 +82,7 @@ export function Products() {
   const [items, setItems] = useState<ProductRow[]>([]);
   const [brands, setBrands] = useState<BrandOption[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [subCategories, setSubCategories] = useState<Array<{ _id: string; name: string }>>([]);
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,6 +109,14 @@ export function Products() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const loadSubCategories = async (categoryId: string) => {
+    if (!categoryId) { setSubCategories([]); return; }
+    try {
+      const response = await api.get('/subcategories', { params: { categoryId } });
+      setSubCategories(response.data.subCategories || []);
+    } catch { setSubCategories([]); }
+  };
 
   const loadBrandsForCategory = async (categoryId: string) => {
     if (!categoryId) {
@@ -144,6 +154,7 @@ export function Products() {
       name: typeof item.name === "string" ? item.name : t(item.name),
       brand: brandId,
       category: categoryId,
+      subCategory: item.subCategory?._id ?? "",
       price: item.price ?? 0,
       description: "",
       quantity: 0,
@@ -163,10 +174,11 @@ export function Products() {
     setError(null);
     setCreateOpen(true);
     void loadBrandsForCategory(categoryId);
+    void loadSubCategories(categoryId);
   };
 
   const saveProduct = async () => {
-    if (!draft.name.trim() || !draft.category || !draft.brand) return;
+    if (!draft.name.trim() || !draft.category || !draft.brand || (subCategories.length && !draft.subCategory)) return;
     if (!editing && !draft.images?.length) return;
 
     setSaving(true);
@@ -175,6 +187,7 @@ export function Products() {
       const formData = new FormData();
       formData.append("name", draft.name.trim());
       formData.append("category", draft.category);
+      if (draft.subCategory) formData.append("subCategory", draft.subCategory);
       formData.append("price", String(draft.price || 0));
       formData.append("description", draft.description);
       formData.append("quantity", String(draft.quantity || 0));
@@ -378,16 +391,22 @@ export function Products() {
               value={draft.category}
               onChange={(e) => {
                 const category = e.target.value;
-                setDraft((p) => ({ ...p, category, brand: "" }));
+                setDraft((p) => ({ ...p, category, brand: "", subCategory: "" }));
                 setError(null);
                 void loadBrandsForCategory(category);
+                void loadSubCategories(category);
               }}
             >
               <option value="">Select category</option>
               {categories.map((cat) => <option key={cat._id} value={cat._id}>{fieldText(cat.name)}</option>)}
             </Select>
           </Field>
-          <Field label="Brand" required hint={!draft.category ? "Select a category first" : undefined}>
+          {subCategories.length > 0 && <Field label="Subcategory" required>
+            <Select value={draft.subCategory} onChange={(e) => setDraft((p) => ({ ...p, subCategory: e.target.value }))}>
+              <option value="">Select subcategory</option>
+              {subCategories.map(item => <option key={item._id} value={item._id}>{item.name}</option>)}
+            </Select>
+          </Field>}          <Field label="Brand" required hint={!draft.category ? "Select a category first" : undefined}>
             <Select
               value={draft.brand}
               disabled={!draft.category || loadingBrands}
