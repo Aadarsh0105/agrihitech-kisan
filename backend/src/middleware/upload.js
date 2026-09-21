@@ -5,6 +5,7 @@ const path = require("path");
 
 const getFolder = (req) => {
   if (req.baseUrl.includes("banners")) return "banners";
+  if (req.baseUrl.includes("subcategories")) return "subcategories";
   if (req.baseUrl.includes("categories")) return "categories";
   if (req.baseUrl.includes("products")) return "products";
   if (req.baseUrl.includes("brands")) return "brands";
