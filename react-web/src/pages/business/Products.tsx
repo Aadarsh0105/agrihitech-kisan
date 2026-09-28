@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import api from '../../api/axios';
 import { Edit3, Package, Plus, Trash2 } from 'lucide-react';
 import { Button } from '../../components/admin/ui/Button';
 import { ConfirmDialog, Modal } from '../../components/admin/ui/Modal';
 import { Field, Input, Select, Textarea } from '../../components/admin/ui/Input';
 import { createMyProduct, deleteMyProduct, getMyBrands, getMyProducts, updateMyProduct, type BusinessBrand, type BusinessProduct, type BusinessProductDraft } from '../../services/business.service';
 
-const emptyDraft: BusinessProductDraft = { name: '', category: '', brand: '', description: '', price: 0, quantity: 0, unit: '', brandVariant: '', qualityGrade: '', suitableCrops: '', keyBenefits: '', safetyPrecautions: '', activeIngredient: '', targetPests: '', safetyPeriod: '', packSize: '', storage: '', images: null };
+const emptyDraft: BusinessProductDraft = { name: '', category: '', subCategory: '', brand: '', description: '', price: 0, quantity: 0, unit: '', brandVariant: '', qualityGrade: '', suitableCrops: '', keyBenefits: '', safetyPrecautions: '', activeIngredient: '', targetPests: '', safetyPeriod: '', packSize: '', storage: '', images: null };
 const messageOf = (error: unknown) => axios.isAxiosError(error) ? error.response?.data?.error ?? error.response?.data?.message ?? error.message : error instanceof Error ? error.message : 'Something went wrong';
 
 export function BusinessProducts() {
   const [products, setProducts] = useState<BusinessProduct[]>([]);
   const [brands, setBrands] = useState<BusinessBrand[]>([]);
+  const [subCategories, setSubCategories] = useState<Array<{ _id: string; name: string }>>([]);
   const [draft, setDraft] = useState<BusinessProductDraft>({ ...emptyDraft });
   const [editing, setEditing] = useState<BusinessProduct | null>(null);
   const [pendingDelete, setPendingDelete] = useState<BusinessProduct | null>(null);
@@ -27,6 +29,12 @@ export function BusinessProducts() {
     finally { setLoading(false); }
   };
   useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    if (!draft.category) { setSubCategories([]); return; }
+    api.get('/subcategories', { params: { categoryId: draft.category } })
+      .then((response) => setSubCategories(response.data.subCategories || []))
+      .catch(() => setSubCategories([]));
+  }, [draft.category]);
 
   const categories = useMemo(() => {
     const unique = new Map<string, string>();
@@ -39,11 +47,11 @@ export function BusinessProducts() {
   const openCreate = () => { setEditing(null); setDraft({ ...emptyDraft }); setError(''); setModalOpen(true); };
   const openEdit = (product: BusinessProduct) => {
     setEditing(product);
-    setDraft({ name: product.name, category: product.categoryId ?? '', brand: product.brandId ?? '', description: product.description ?? '', price: product.price ?? 0, quantity: product.quantity ?? 0, unit: product.unit ?? '', brandVariant: product.brandVariant ?? '', qualityGrade: product.qualityGrade ?? '', suitableCrops: product.suitableCrops?.join(', ') ?? '', keyBenefits: product.keyBenefits?.join(', ') ?? '', safetyPrecautions: product.safetyPrecautions ?? '', activeIngredient: product.specifications?.activeIngredient ?? '', targetPests: product.specifications?.targetPests ?? '', safetyPeriod: product.specifications?.safetyPeriod ?? '', packSize: product.specifications?.packSize ?? '', storage: product.specifications?.storage ?? '', images: null });
+    setDraft({ name: product.name, category: product.categoryId ?? '', subCategory: product.subCategory?._id ?? product.subCategoryId ?? '', brand: product.brandId ?? '', description: product.description ?? '', price: product.price ?? 0, quantity: product.quantity ?? 0, unit: product.unit ?? '', brandVariant: product.brandVariant ?? '', qualityGrade: product.qualityGrade ?? '', suitableCrops: product.suitableCrops?.join(', ') ?? '', keyBenefits: product.keyBenefits?.join(', ') ?? '', safetyPrecautions: product.safetyPrecautions ?? '', activeIngredient: product.specifications?.activeIngredient ?? '', targetPests: product.specifications?.targetPests ?? '', safetyPeriod: product.specifications?.safetyPeriod ?? '', packSize: product.specifications?.packSize ?? '', storage: product.specifications?.storage ?? '', images: null });
     setError(''); setModalOpen(true);
   };
   const save = async () => {
-    if (!draft.name.trim() || !draft.category || !draft.brand || (!editing && !draft.images?.length)) return;
+    if (!draft.name.trim() || !draft.category || !draft.brand || (subCategories.length > 0 && !draft.subCategory) || (!editing && !draft.images?.length)) return;
     setSaving(true); setError('');
     try { editing ? await updateMyProduct(editing._id, draft) : await createMyProduct(draft); setModalOpen(false); await load(); }
     catch (requestError) { setError(messageOf(requestError)); }
@@ -62,7 +70,7 @@ export function BusinessProducts() {
     {!brands.length && !loading ? <div className="rounded-xl border border-warning/30 bg-warning-subtle p-4 text-sm text-warning">Create a brand before adding products.</div> : null}
     {error ? <div className="rounded-xl border border-danger/20 bg-danger-subtle p-4 text-sm text-danger">{error}</div> : null}
     {loading ? <Message text="Loading your products..." /> : products.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{products.map((product) => <ProductCard key={product._id} product={product} onEdit={() => openEdit(product)} onDelete={() => setPendingDelete(product)} />)}</div> : <Message text="You have not created any products yet." />}
-    <ProductModal open={modalOpen} editing={editing} saving={saving} draft={draft} categories={categories} brands={availableBrands} set={set} close={() => setModalOpen(false)} save={save} />
+    <ProductModal open={modalOpen} editing={editing} saving={saving} draft={draft} categories={categories} subCategories={subCategories} brands={availableBrands} set={set} close={() => setModalOpen(false)} save={save} />
     <ConfirmDialog open={Boolean(pendingDelete)} onClose={() => setPendingDelete(null)} onConfirm={() => void remove()} title="Delete product" message="This product will be permanently removed from your catalogue." />
   </div>;
 }
@@ -72,10 +80,11 @@ function ProductCard({ product, onEdit, onDelete }: { product: BusinessProduct; 
 }
 
 type SetDraft = <K extends keyof BusinessProductDraft>(key: K, value: BusinessProductDraft[K]) => void;
-function ProductModal({ open, editing, saving, draft, categories, brands, set, close, save }: { open: boolean; editing: BusinessProduct | null; saving: boolean; draft: BusinessProductDraft; categories: Array<{ id: string; name: string }>; brands: BusinessBrand[]; set: SetDraft; close: () => void; save: () => Promise<void> }) {
-  return <Modal open={open} onClose={close} title={editing ? 'Edit product' : 'Add product'} description="Products are added under one of your own brands." size="lg" footer={<><Button onClick={close}>Cancel</Button><Button variant="primary" onClick={() => void save()} disabled={saving || !draft.name.trim() || !draft.category || !draft.brand || (!editing && !draft.images?.length)}>{saving ? 'Saving...' : editing ? 'Save changes' : 'Create product'}</Button></>}><div className="grid gap-4 sm:grid-cols-2">
+function ProductModal({ open, editing, saving, draft, categories, subCategories, brands, set, close, save }: { open: boolean; editing: BusinessProduct | null; saving: boolean; draft: BusinessProductDraft; categories: Array<{ id: string; name: string }>; subCategories: Array<{ _id: string; name: string }>; brands: BusinessBrand[]; set: SetDraft; close: () => void; save: () => Promise<void> }) {
+  return <Modal open={open} onClose={close} title={editing ? 'Edit product' : 'Add product'} description="Products are added under one of your own brands." size="lg" footer={<><Button onClick={close}>Cancel</Button><Button variant="primary" onClick={() => void save()} disabled={saving || !draft.name.trim() || !draft.category || !draft.brand || (subCategories.length > 0 && !draft.subCategory) || (!editing && !draft.images?.length)}>{saving ? 'Saving...' : editing ? 'Save changes' : 'Create product'}</Button></>}><div className="grid gap-4 sm:grid-cols-2">
     <Field label="Product name" required><Input value={draft.name} onChange={(e) => set('name', e.target.value)} /></Field>
-    <Field label="Category" required><Select value={draft.category} onChange={(e) => { set('category', e.target.value); set('brand', ''); }}><option value="">Select category</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field>
+    <Field label="Category" required><Select value={draft.category} onChange={(e) => { set('category', e.target.value); set('subCategory', ''); set('brand', ''); }}><option value="">Select category</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field>
+    {subCategories.length > 0 && <Field label="Subcategory" required><Select value={draft.subCategory} onChange={(e) => set('subCategory', e.target.value)}><option value="">Select subcategory</option>{subCategories.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</Select></Field>}
     <Field label="Brand" required hint={!draft.category ? 'Select a category first' : undefined}><Select value={draft.brand} disabled={!draft.category} onChange={(e) => set('brand', e.target.value)}><option value="">Select your brand</option>{brands.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</Select></Field>
     <Field label="Price"><Input type="number" min="0" value={draft.price} onChange={(e) => set('price', Number(e.target.value))} /></Field>
     <Field label="Quantity"><Input type="number" min="0" value={draft.quantity} onChange={(e) => set('quantity', Number(e.target.value))} /></Field>

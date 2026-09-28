@@ -19,6 +19,8 @@ export interface BusinessProduct {
   brandId?: string;
   categoryId?: string;
   categoryName?: string;
+  subCategory?: { _id: string; name: string } | null;
+  subCategoryId?: string;
   description?: string;
   brandVariant?: string;
   qualityGrade?: string;
@@ -37,6 +39,7 @@ export interface BusinessProduct {
 export interface BusinessProductDraft {
   name: string;
   category: string;
+  subCategory: string;
   brand: string;
   description: string;
   price: number;
@@ -140,6 +143,7 @@ function productFormData(draft: BusinessProductDraft) {
   const data = new FormData();
   data.append('name', draft.name.trim());
   data.append('category', draft.category);
+  if (draft.subCategory) data.append('subCategory', draft.subCategory);
   data.append('brand', draft.brand);
   data.append('description', draft.description);
   data.append('price', String(draft.price || 0));

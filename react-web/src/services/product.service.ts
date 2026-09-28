@@ -143,9 +143,9 @@ export async function getProductsByCategory(categoryId: string): Promise<Product
   return data.products.map(mapProduct);
 }
 
-export async function getProductsByBrand(brandId: string) {
+export async function getProductsByBrand(brandId: string, subCategoryId?: string, categoryId?: string) {
   const { data } = await api.get<BrandProductsResponse>(`/brands/${brandId}/products`, {
-    params: { page: 1, limit: 100 },
+    params: { page: 1, limit: 100, ...(categoryId ? { categoryId } : {}), ...(subCategoryId ? { subCategoryId } : {}) },
   });
   return { brand: data.brand, products: (data.products ?? []).map(mapProduct) };
 }

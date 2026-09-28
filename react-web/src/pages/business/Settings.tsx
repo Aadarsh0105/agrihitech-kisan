@@ -38,5 +38,13 @@ export function BusinessSettings() {
         <div className="border-y border-border bg-muted/30 px-6 py-4"><div className="flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /><h2 className="font-display font-bold">Service location</h2></div></div><div className="grid gap-5 p-6 sm:grid-cols-2"><Field label="State"><Select value={draft.location.state} onChange={(e) => setLocation('state', e.target.value)}><option value="">Select state</option>{indianStates.map((state) => <option key={state} value={state}>{state}</option>)}</Select></Field><Field label="District"><Input value={draft.location.district} onChange={(e) => setLocation('district', e.target.value)} /></Field><Field label="City / Village"><Input value={draft.location.village} onChange={(e) => setLocation('village', e.target.value)} /></Field><Field label="Pincode"><Input inputMode="numeric" maxLength={6} value={draft.location.pincode} onChange={(e) => setLocation('pincode', e.target.value.replace(/\D/g, ''))} />{draft.location.pincode && !/^\d{6}$/.test(draft.location.pincode) ? <p className="mt-1 text-xs font-medium text-destructive">Enter a valid 6-digit pincode.</p> : null}</Field></div>
         <div className="flex items-center justify-end border-t border-border bg-muted/20 px-6 py-4"><Button variant="primary" disabled={saving || !changed || !valid} onClick={() => void save()}><Save className="h-4 w-4" />{saving ? 'Saving changes...' : changed ? 'Save changes' : 'Up to date'}</Button></div></section>
     </div>}
+    <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+      <h2 className="font-display text-lg font-bold">Legal</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Read the policies that apply to your account.</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <a href="/terms?role=B2B" className="rounded-2xl border border-border px-4 py-3 font-medium transition-colors hover:border-primary hover:text-primary">Terms &amp; Conditions</a>
+        <a href="/privacy-policy" className="rounded-2xl border border-border px-4 py-3 font-medium transition-colors hover:border-primary hover:text-primary">Privacy Policy</a>
+      </div>
+    </section>
   </div>;
 }

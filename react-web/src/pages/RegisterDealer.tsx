@@ -27,6 +27,7 @@ const schema = z.object({
   district: z.string().trim().min(2, 'District is required'),
   village: z.string().trim().min(2, 'City or village is required'),
   pincode: z.string().regex(/^\d{6}$/, 'Enter a valid 6-digit pincode'),
+  acceptedTerms: z.boolean().refine(Boolean, 'Accept the Terms & Conditions to continue'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -58,7 +59,7 @@ export function RegisterBrand() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { categories: [], dealerBrands: [] },
+    defaultValues: { categories: [], dealerBrands: [], acceptedTerms: false },
   });
   const selectedCategories = watch('categories');
   const selectedBrands = watch('dealerBrands');
@@ -205,6 +206,12 @@ export function RegisterBrand() {
               <Input inputMode="numeric" maxLength={6} {...register('pincode')} />
             </Field>
           </div>
+
+          <label className="mt-6 flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
+            <input type="checkbox" {...register('acceptedTerms')} className="mt-0.5 h-4 w-4 accent-primary" />
+            <span>I agree to the <a href="/terms?role=B2B" target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">Terms & Conditions</a>.</span>
+          </label>
+          {errors.acceptedTerms ? <p className="mt-1 text-xs font-medium text-destructive">{errors.acceptedTerms.message}</p> : null}
 
           {requestError ? <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{requestError}</p> : null}
 

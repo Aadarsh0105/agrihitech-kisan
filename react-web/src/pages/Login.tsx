@@ -159,7 +159,11 @@ export function Login() {
               />
             </div>
 
-            {otpSent ? (
+            <p className="mt-5 text-center text-xs text-muted-foreground">
+            By continuing, you agree to the <Link to={'/terms?role=' + role} className="font-semibold text-primary hover:underline">Terms & Conditions</Link> and <Link to="/privacy-policy" className="font-semibold text-primary hover:underline">Privacy Policy</Link>.
+          </p>
+
+          {otpSent ? (
               <div>
                 <Label>OTP</Label>
                 <Input

@@ -20,6 +20,7 @@ const schema = z.object({
   mobile: z.string().regex(/^\d{10}$/, 'Enter a valid 10-digit mobile number'),
   email: z.union([z.literal(''), z.string().trim().email('Enter a valid email')]),
   categories: z.array(z.string()).min(1, 'Select at least one category').max(2, 'Select up to two categories'),
+  acceptedTerms: z.boolean().refine(Boolean, 'Accept the Terms & Conditions to continue'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -44,7 +45,7 @@ export function RegisterCompany() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { companyName: '', contactPerson: '', mobile: '', email: '', categories: [] },
+    defaultValues: { companyName: '', contactPerson: '', mobile: '', email: '', categories: [], acceptedTerms: false },
   });
   const selectedCategories = watch('categories');
 
@@ -121,6 +122,12 @@ export function RegisterCompany() {
             </details>
           </Field>
         </div>
+        <label className="mt-6 flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
+          <input type="checkbox" {...register('acceptedTerms')} className="mt-0.5 h-4 w-4 accent-primary" />
+          <span>I agree to the <a href="/terms?role=COMPANY" target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">Terms & Conditions</a>.</span>
+        </label>
+        {errors.acceptedTerms ? <p className="mt-1 text-xs font-medium text-destructive">{errors.acceptedTerms.message}</p> : null}
+
         {requestError ? <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{requestError}</p> : null}
         <Button type="submit" size="lg" className="mt-6 w-full" disabled={isSubmitting}>{isSubmitting ? 'Registering company...' : 'Register and choose subscription'}</Button>
       </form>

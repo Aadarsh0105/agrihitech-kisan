@@ -88,6 +88,14 @@ export function CompanySettings() {
         <div className="flex flex-col gap-3 border-t border-border bg-muted/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-muted-foreground">Review your changes before saving.</p><Button variant="primary" disabled={saving || !changed || !valid} onClick={save}><Save className="h-4 w-4" />{saving ? 'Saving changes...' : changed ? 'Save changes' : 'Up to date'}</Button></div>
       </section>
     </div>}
+    <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+      <h2 className="font-display text-lg font-bold">Legal</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Read the policies that apply to your account.</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <a href="/terms?role=COMPANY" className="rounded-2xl border border-border px-4 py-3 font-medium transition-colors hover:border-primary hover:text-primary">Terms &amp; Conditions</a>
+        <a href="/privacy-policy" className="rounded-2xl border border-border px-4 py-3 font-medium transition-colors hover:border-primary hover:text-primary">Privacy Policy</a>
+      </div>
+    </section>
   </div>;
 }
 
