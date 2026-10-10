@@ -13,7 +13,7 @@ router.put("/:id", verifyToken, isAdmin, controller.updatePlan);
 router.delete("/:id", verifyToken, isAdmin, controller.deletePlan);
 
 // USER
-router.get("/", controller.getPlans);
+router.get("/", verifyToken, controller.getPlans);
 router.get("/history", verifyToken, controller.getHistory);
 router.post("/create-order", verifyToken, controller.createOrder);
 router.post("/verify-payment", verifyToken, controller.verifyPayment);

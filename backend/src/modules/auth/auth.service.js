@@ -29,6 +29,9 @@ const generateOTP = () => {
 // 📲 Send OTP
 exports.sendOtp = async (mobile, role = "B2C") => {
   const user = await User.findOne({ mobile });
+  if (user?.isActive === false) {
+    throw new Error("Your account has been deactivated. Contact support.");
+  }
 
   // New user allowed only for B2C
   if (!user && role !== "B2C") {
@@ -92,6 +95,9 @@ exports.verifyOtp = async (mobile, otp, role) => {
   if (record.expiresAt < new Date()) throw new Error("OTP Expired");
 
   let user = await User.findOne({ mobile });
+  if (user?.isActive === false) {
+    throw new Error("Your account has been deactivated. Contact support.");
+  }
 
   // New user allowed only for B2C
   if (!user) {

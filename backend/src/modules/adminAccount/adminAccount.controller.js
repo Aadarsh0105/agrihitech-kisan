@@ -17,3 +17,13 @@ exports.getOne = async (req, res) => {
     res.status(404).json({ success: false, message: error.message });
   }
 };
+
+
+exports.updateStatus = async (req, res) => {
+  try {
+    const account = await service.updateAccountStatus(req.params.id, req.body.isActive);
+    res.json({ success: true, account });
+  } catch (error) {
+    res.status(error.message === "Account not found" ? 404 : 400).json({ success: false, message: error.message });
+  }
+};

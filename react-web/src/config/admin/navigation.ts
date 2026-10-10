@@ -2,7 +2,6 @@ import {
   LayoutDashboardIcon,
   Building2Icon,
   ImageIcon,
-  BadgeCheckIcon,
   FolderTreeIcon,
   PackageIcon,
   LandmarkIcon,
@@ -43,7 +42,6 @@ export const navigation: NavGroup[] = [
   label: 'Catalogue',
   items: [
     { label: 'Categories', path: '/admin/categories', icon: FolderTreeIcon },
-    { label: 'Brands', path: '/admin/brands', icon: BadgeCheckIcon },
     { label: 'Products', path: '/admin/products', icon: PackageIcon }
   ]
 },

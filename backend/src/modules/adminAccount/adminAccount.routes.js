@@ -3,6 +3,7 @@ const controller = require("./adminAccount.controller");
 const { verifyToken, isAdmin } = require("../../middleware/isAdmin");
 
 router.get("/", verifyToken, isAdmin, controller.list);
+router.patch("/:id/status", verifyToken, isAdmin, controller.updateStatus);
 router.get("/:id", verifyToken, isAdmin, controller.getOne);
 
 module.exports = router;

@@ -58,7 +58,7 @@ exports.createPlan = async (req, res) => {
 // GET ALL
 exports.getPlans = async (req, res) => {
   try {
-    const plans = await service.getPlans();
+    const plans = await service.getPlans(req.user);
     res.json(plans);
   } catch (err) {
     res.status(400).json({ error: err.message });

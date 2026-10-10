@@ -12,6 +12,7 @@ type PlanRow = {
   _id: string;
   name: string;
   type: "MONTHLY" | "YEARLY";
+  applicableRole?: "B2B" | "COMPANY";
   price: number;
   currency?: string;
   isRecommended?: boolean;
@@ -24,6 +25,7 @@ type PlanRow = {
 const emptyDraft = {
   name: "",
   type: "MONTHLY" as PlanRow["type"],
+  applicableRole: "B2B" as PlanRow["applicableRole"],
   price: 0,
   currency: "INR",
   isRecommended: false,
@@ -70,6 +72,7 @@ export function Subscriptions() {
     setDraft({
       name: item.name,
       type: item.type,
+      applicableRole: item.applicableRole ?? "B2B",
       price: item.price,
       currency: item.currency ?? "INR",
       isRecommended: Boolean(item.isRecommended),
@@ -83,7 +86,7 @@ export function Subscriptions() {
   };
 
   const savePlan = async () => {
-    if (!draft.name.trim() || !draft.type || draft.price <= 0 || draft.duration <= 0) return;
+    if (!draft.name.trim() || !draft.type || draft.price < 0 || draft.duration <= 0) return;
 
     setSaving(true);
     setError(null);
@@ -91,6 +94,7 @@ export function Subscriptions() {
       const payload = {
         name: draft.name.trim(),
         type: draft.type,
+        applicableRole: draft.applicableRole,
         price: draft.price,
         currency: draft.currency.trim() || "INR",
         isRecommended: draft.isRecommended,
@@ -136,6 +140,7 @@ export function Subscriptions() {
 
   const columns: Column<PlanRow>[] = [
     { key: "name", header: "Plan", render: (item) => <div><div className="font-medium">{item.name}</div><div className="text-[11px] text-muted-foreground">{item.type}</div></div> },
+    { key: "role", header: "For role", render: (item) => item.applicableRole ? <Badge tone={item.applicableRole === "COMPANY" ? "success" : "info"}>{item.applicableRole === "COMPANY" ? "Company" : "Seller / B2B"}</Badge> : <Badge tone="warning">Assign role</Badge> },
     { key: "price", header: "Price", render: (item) => <span className="text-xs">{item.currency ?? "INR"} {item.price}</span> },
     { key: "duration", header: "Duration", render: (item) => <span className="text-xs">{item.duration} days</span> },
     { key: "recommended", header: "Plan", render: (item) => item.isRecommended ? <Badge tone="success">Recommended</Badge> : <Badge tone="neutral">Standard</Badge> },
@@ -201,7 +206,7 @@ export function Subscriptions() {
             <Button
               variant="primary"
               onClick={() => void savePlan()}
-              disabled={saving || !draft.name.trim() || draft.price <= 0 || draft.duration <= 0}
+              disabled={saving || !draft.name.trim() || draft.price < 0 || draft.duration <= 0}
             >
               {saving ? "Saving..." : editing ? "Save changes" : "Create plan"}
             </Button>
@@ -216,6 +221,12 @@ export function Subscriptions() {
             <Select value={draft.type} onChange={(e) => setDraft((p) => ({ ...p, type: e.target.value as PlanRow["type"] }))}>
               <option value="MONTHLY">MONTHLY</option>
               <option value="YEARLY">YEARLY</option>
+            </Select>
+          </Field>
+          <Field label="Available for" required>
+            <Select value={draft.applicableRole} onChange={(e) => setDraft((p) => ({ ...p, applicableRole: e.target.value as PlanRow["applicableRole"] }))}>
+              <option value="B2B">Seller / B2B</option>
+              <option value="COMPANY">Company / Brand</option>
             </Select>
           </Field>
           <Field label="Price" required>

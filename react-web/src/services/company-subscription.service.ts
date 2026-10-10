@@ -4,6 +4,7 @@ export interface SubscriptionPlan {
   _id: string;
   name: string;
   type: 'MONTHLY' | 'YEARLY';
+  applicableRole: 'B2B' | 'COMPANY';
   price: number;
   currency: string;
   duration: number;
@@ -22,7 +23,7 @@ export interface SubscriptionOrder {
 
 export interface SubscriptionRecord {
   _id?: string;
-  planId?: Pick<SubscriptionPlan, '_id' | 'name' | 'type' | 'price' | 'currency' | 'duration'>;
+  planId?: Pick<SubscriptionPlan, '_id' | 'name' | 'type' | 'applicableRole' | 'price' | 'currency' | 'duration'>;
   paymentStatus?: 'PENDING' | 'PAID' | 'FAILED';
   amount?: number;
   currency?: string;

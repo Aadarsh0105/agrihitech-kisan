@@ -8,6 +8,11 @@ const subscriptionSchema = new mongoose.Schema(
       enum: ["MONTHLY", "YEARLY"],
       required: true
     },
+    applicableRole: {
+      type: String,
+      enum: ["B2B", "COMPANY"],
+      required: true
+    },
     price: { type: Number, required: true },
     currency: {
       type: String,
@@ -26,6 +31,6 @@ const subscriptionSchema = new mongoose.Schema(
 );
 
 // ✅ Index for faster queries
-subscriptionSchema.index({ type: 1, isActive: 1 });
+subscriptionSchema.index({ applicableRole: 1, type: 1, isActive: 1 });
 
 module.exports = mongoose.model("Subscription", subscriptionSchema);

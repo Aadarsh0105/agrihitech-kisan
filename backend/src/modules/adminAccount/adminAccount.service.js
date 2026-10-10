@@ -12,7 +12,11 @@ exports.getAccounts = async (query) => {
   const page = Math.max(parseInt(query.page, 10) || 1, 1);
   const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 100);
   const search = String(query.search || "").trim();
+  const status = String(query.status || "ALL").toUpperCase();
+  if (!["ALL", "ACTIVE", "INACTIVE"].includes(status)) throw new Error("Invalid account status filter");
   const filter = { role };
+  if (status === "ACTIVE") filter.isActive = { $ne: false };
+  if (status === "INACTIVE") filter.isActive = false;
 
   if (search) {
     filter.$or = ["mobile", "firmName", "proprietorName", "companyName", "contactPerson", "email"].map((field) => ({
@@ -49,4 +53,16 @@ exports.getAccountById = async (id) => {
   ]);
 
   return { account, ownedBrands, products };
+};
+
+
+exports.updateAccountStatus = async (id, isActive) => {
+  if (typeof isActive !== "boolean") throw new Error("isActive must be true or false");
+  const account = await User.findOneAndUpdate(
+    { _id: id, role: { $in: allowedRoles } },
+    { $set: { isActive } },
+    { new: true, runValidators: true }
+  ).select(safeFields);
+  if (!account) throw new Error("Account not found");
+  return account;
 };

@@ -14,15 +14,17 @@ export function RowActions({
   onView,
   onEdit,
   onDelete,
-  extra = []
+  extra = [],
+  menuClassName
 
 
 
 
 
-}: {onView?: () => void;onEdit?: () => void;onDelete?: () => void;extra?: RowAction[];}) {
+}: {onView?: () => void;onEdit?: () => void;onDelete?: () => void;extra?: RowAction[];menuClassName?: string;}) {
   return (
     <Dropdown
+      className={menuClassName}
       trigger={({ toggle }) =>
       <Button variant="ghost" size="iconSm" aria-label="Row actions" onClick={toggle}>
           <MoreHorizontalIcon className="h-4 w-4" />

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { MessageSquareText, Phone } from 'lucide-react';
 import supportAssistant from '../../data/support-assistant.json';
 import { ChatbotWidget } from './ChatbotWidget';
@@ -14,6 +15,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 
 export function FloatingActions() {
   const [chatOpen, setChatOpen] = useState(false);
+  const { pathname } = useLocation();
   const phone = (import.meta.env.VITE_SUPPORT_PHONE || supportAssistant.contact.phone).replace(/[^+\d]/g, '');
   const whatsapp = (import.meta.env.VITE_WHATSAPP_NUMBER || supportAssistant.contact.whatsapp).replace(/\D/g, '');
   const whatsappUrl = `https://wa.me/${whatsapp}?text=${encodeURIComponent(supportAssistant.contact.whatsappMessage)}`;
@@ -21,6 +23,8 @@ export function FloatingActions() {
     { label: 'Call us', href: `tel:${phone}`, icon: Phone, color: 'bg-sky-600 hover:bg-sky-700', external: false },
     { label: 'WhatsApp', href: whatsappUrl, icon: WhatsAppIcon, color: 'bg-[#20b858] hover:bg-[#179c49]', external: true },
   ];
+
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) return null;
 
   return (
     <>
