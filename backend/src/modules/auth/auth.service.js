@@ -2,7 +2,6 @@ const User = require("./auth.model");
 const OTP = require("./otp.model");
 const bcrypt = require("bcrypt");
 const cloudinary = require("../../config/cloudinary");
-const client = require("../../config/twilio");
 const streamifier = require("streamifier");
 const fs = require("fs");
 const axios = require("axios");
@@ -11,8 +10,7 @@ const Brand = require("../brand/brand.model");
 
 // 🔢 Generate 4 digit OTP
 const generateOTP = () => {
-  // return Math.floor(1000 + Math.random() * 9000).toString();
-  return "1234"; // for testing only
+  return "1234"; // temporary test OTP until MSG91 WhatsApp is enabled again
 };
 
 
@@ -61,8 +59,6 @@ exports.sendOtp = async (mobile, role = "B2C") => {
     );
   }
 
-  await OTP.deleteMany({ mobile });
-
   const otp = generateOTP();
 
   // 📤 SEND SMS USING TWILIO
@@ -73,6 +69,7 @@ exports.sendOtp = async (mobile, role = "B2C") => {
   // });
 
 
+  await OTP.deleteMany({ mobile });
   await OTP.create({
     mobile,
     otp,

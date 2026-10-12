@@ -34,9 +34,22 @@ class MandiService {
             ...params,
         });
 
-        const response = await fetch(
-            `${GOV_API}/${GOV_RESOURCE}?${query}`
-        );
+        if (!GOV_API || !GOV_RESOURCE || !GOV_API_KEY) {
+            throw new Error("Mandi service is not configured.");
+        }
+
+        let response: Response;
+
+        try {
+            response = await fetch(
+                `${GOV_API}/${GOV_RESOURCE}?${query}`,
+                { signal: AbortSignal.timeout(30000) }
+            );
+        } catch {
+            throw new Error(
+                "The government Mandi service is temporarily unavailable. Please try again."
+            );
+        }
 
         if (!response.ok) {
             throw new Error("Unable to fetch mandi data.");
