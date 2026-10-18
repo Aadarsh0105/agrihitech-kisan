@@ -22,7 +22,7 @@ const schema = z.object({
   proprietorName: z.string().trim().min(2, 'Proprietor name is required'),
   mobile: z.string().regex(/^\d{10}$/, 'Enter a valid 10-digit phone number'),
   categories: z.array(z.string()).min(1, 'Select at least one category').max(2, 'Select up to two categories'),
-  dealerBrands: z.array(z.string()).min(1, 'Select at least one brand'),
+  dealerBrands: z.array(z.string()),
   state: z.string().min(1, 'Select state'),
   district: z.string().trim().min(2, 'District is required'),
   village: z.string().trim().min(2, 'City or village is required'),
@@ -219,11 +219,11 @@ export function RegisterBrand() {
             </Field>
 
 
-            <Field label="Brands / Companies" error={errors.dealerBrands?.message}>
+            <Field label="Brands / Companies (optional)" error={errors.dealerBrands?.message}>
               <details className="group relative">
                 <summary className="flex h-11 cursor-pointer list-none items-center justify-between rounded-xl border border-input bg-background px-4 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <span className={selectedBrands.length ? '' : 'text-muted-foreground'}>
-                    {selectedBrands.length ? `${selectedBrands.length} brand${selectedBrands.length > 1 ? 's' : ''} selected` : !selectedCategories.length ? 'Select categories first' : brands.loading ? 'Loading brands...' : 'Select brands'}
+                    {selectedBrands.length ? `${selectedBrands.length} brand${selectedBrands.length > 1 ? 's' : ''} selected` : !selectedCategories.length ? 'Select categories first' : brands.loading ? 'Loading brands...' : 'Select brands (optional)'}
                   </span>
                   <ChevronDown className="h-4 w-4 text-muted-foreground transition group-open:rotate-180" />
                 </summary>
