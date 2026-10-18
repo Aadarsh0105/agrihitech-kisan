@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import axios from 'axios';
-import { ChevronDown, Store } from 'lucide-react';
+import { ArrowRight, ChevronDown, Store } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { indianStates } from '../data/mockData';
 import { Seo } from '../components/layout/Seo';
@@ -49,6 +49,10 @@ export function RegisterBrand() {
   const navigate = useNavigate();
   const [requestError, setRequestError] = useState('');
   const [showSubscription, setShowSubscription] = useState(false);
+  const [registeredMobile, setRegisteredMobile] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
   const categories = useAsync(getPublicCategories, []);
   const brands = useAsync(getPublicBrands, []);
   const {
@@ -93,7 +97,29 @@ export function RegisterBrand() {
   const onSubmit = async (values: FormValues) => {
     setRequestError('');
     try {
-      const { data } = await api.post<RegisterResponse>('/auth/register-b2b', values);
+      await api.post<RegisterResponse>('/auth/register-b2b', values);
+      setRegisteredMobile(values.mobile);
+      setOtpSent(true);
+      await api.post('/auth/send-otp', { mobile: values.mobile, role: 'B2B' });
+    } catch (error) {
+      setRequestError(apiError(error));
+    }
+  };
+
+  const verifyRegistrationOtp = async () => {
+    if (!/^\d{4}$/.test(otp)) {
+      setRequestError('Enter the 4-digit OTP');
+      return;
+    }
+
+    setOtpLoading(true);
+    setRequestError('');
+    try {
+      const { data } = await api.post<RegisterResponse>('/auth/verify-otp', {
+        mobile: registeredMobile,
+        otp,
+        role: 'B2B',
+      });
       localStorage.setItem('token', data.token);
       localStorage.setItem('auth_user', JSON.stringify(data.user));
       api.defaults.headers.common.Authorization = `Bearer ${data.token}`;
@@ -101,11 +127,46 @@ export function RegisterBrand() {
       setShowSubscription(true);
     } catch (error) {
       setRequestError(apiError(error));
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const resendOtp = async () => {
+    setOtpLoading(true);
+    setRequestError('');
+    try {
+      await api.post('/auth/send-otp', { mobile: registeredMobile, role: 'B2B' });
+    } catch (error) {
+      setRequestError(apiError(error));
+    } finally {
+      setOtpLoading(false);
     }
   };
 
   if (showSubscription) {
     return <SubscriptionChoiceModal open accountLabel="business" onComplete={() => navigate('/business/dashboard', { replace: true })} />;
+  }
+
+  if (otpSent) {
+    return (
+      <div className="container max-w-md py-12">
+        <div className="rounded-3xl border border-border bg-card p-6 text-center shadow-soft md:p-8">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground"><Store className="h-6 w-6" /></span>
+          <h1 className="mt-5 font-display text-2xl font-extrabold text-foreground">Verify your WhatsApp number</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Enter the 4-digit OTP sent on WhatsApp to +91 {registeredMobile}</p>
+          <div className="mt-6 text-left">
+            <Label>OTP</Label>
+            <Input value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" maxLength={4} autoFocus placeholder="Enter 4-digit OTP" />
+          </div>
+          {requestError ? <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{requestError}</p> : null}
+          <Button type="button" size="lg" className="mt-5 w-full" disabled={otpLoading || otp.length !== 4} onClick={verifyRegistrationOtp}>
+            {otpLoading ? 'Please wait...' : 'Verify OTP'}{!otpLoading ? <ArrowRight className="h-4 w-4" /> : null}
+          </Button>
+          <button type="button" className="mt-4 text-sm font-semibold text-primary hover:underline" disabled={otpLoading} onClick={resendOtp}>Resend OTP</button>
+        </div>
+      </div>
+    );
   }
 
   return (

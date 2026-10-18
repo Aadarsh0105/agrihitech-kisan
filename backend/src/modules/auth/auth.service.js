@@ -5,12 +5,14 @@ const cloudinary = require("../../config/cloudinary");
 const streamifier = require("streamifier");
 const fs = require("fs");
 const axios = require("axios");
+const { randomInt } = require("crypto");
 const Product = require("../product/product.model");
 const Brand = require("../brand/brand.model");
+const { sendWhatsAppOtp } = require("../../config/msg91-whatsapp");
 
 // 🔢 Generate 4 digit OTP
 const generateOTP = () => {
-  return "1234"; // temporary test OTP until MSG91 WhatsApp is enabled again
+  return String(randomInt(1000, 10000));
 };
 
 
@@ -70,17 +72,21 @@ exports.sendOtp = async (mobile, role = "B2C") => {
 
 
   await OTP.deleteMany({ mobile });
-  await OTP.create({
+  const otpRecord = await OTP.create({
     mobile,
     otp,
     expiresAt: new Date(Date.now() + 5 * 60 * 1000),
   });
 
-  // console.log("OTP:", otp);
+  try {
+    await sendWhatsAppOtp({ mobile, otp });
+  } catch (error) {
+    await OTP.deleteOne({ _id: otpRecord._id });
+    throw error;
+  }
 
   return {
-    message: "OTP sent successfully",
-    otp,
+    message: "OTP sent successfully on WhatsApp",
   };
 };
 
