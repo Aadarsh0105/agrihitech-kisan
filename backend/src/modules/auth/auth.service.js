@@ -783,6 +783,12 @@ exports.deleteUser = async (
     );
   }
 
+  if (!["B2C", "B2B", "COMPANY"].includes(user.role)) {
+    throw new Error(
+      "Only farmer, seller, and company accounts can be deleted"
+    );
+  }
+
   // 🔥 delete profile image
   if (user?.public_id) {
 

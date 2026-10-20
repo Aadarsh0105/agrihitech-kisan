@@ -6,7 +6,8 @@ import { RowActions } from "../../components/admin/shared/RowActions";
 import { Badge, StatusBadge } from "../../components/admin/ui/Badge";
 import { Button } from "../../components/admin/ui/Button";
 import { Input, Select } from "../../components/admin/ui/Input";
-import { getAdminAccounts, updateAdminAccountStatus, type AccountRole, type AdminAccount } from "../../services/admin-account.service";
+import { ConfirmDialog } from "../../components/admin/ui/Modal";
+import { deleteAdminAccount, getAdminAccounts, updateAdminAccountStatus, type AccountRole, type AdminAccount } from "../../services/admin-account.service";
 
 const config: Record<AccountRole, { title: string; description: string; path: string }> = {
   B2B: { title: "Dealers / B2B", description: "Manage registered dealer accounts, assigned categories, and companies.", path: "/admin/dealers" },
@@ -22,6 +23,7 @@ export function AccountDirectory({ role }: { role: AccountRole }) {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState<AdminAccount[]>([]), [page, setPage] = useState(1), [totalPages, setTotalPages] = useState(1), [total, setTotal] = useState(0);
   const [search, setSearch] = useState(""), deferredSearch = useDeferredValue(search), [status, setStatus] = useState<StatusFilter>("ALL"), [loading, setLoading] = useState(true), [changingId, setChangingId] = useState(""), [error, setError] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<AdminAccount | null>(null);
   const limit = 10;
   const load = () => {
     let active = true; setLoading(true); setError("");
@@ -36,6 +38,24 @@ export function AccountDirectory({ role }: { role: AccountRole }) {
     catch (reason: any) { setError(reason?.response?.data?.message || "Unable to update account status."); }
     finally { setChangingId(""); }
   };
+  const removeAccount = async () => {
+    if (!pendingDelete) return;
+    const accountId = pendingDelete._id;
+    setChangingId(accountId); setError("");
+    try {
+      await deleteAdminAccount(accountId);
+      setAccounts((rows) => rows.filter((row) => row._id !== accountId));
+      const nextTotal = Math.max(0, total - 1);
+      setTotal(nextTotal);
+      setTotalPages(Math.max(1, Math.ceil(nextTotal / limit)));
+      if (accounts.length === 1 && page > 1) setPage((value) => value - 1);
+      setPendingDelete(null);
+    } catch (reason: any) {
+      setError(reason?.response?.data?.error || reason?.response?.data?.message || "Unable to delete account.");
+    } finally {
+      setChangingId("");
+    }
+  };
 
   return <>
     <PageHeader title={meta.title} description={meta.description} />
@@ -43,9 +63,10 @@ export function AccountDirectory({ role }: { role: AccountRole }) {
     {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
     <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
       <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-muted/60 text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-4 py-3">Account</th><th className="px-4 py-3">Mobile</th><th className="px-4 py-3">Location</th><th className="px-4 py-3">Categories / Companies</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-border">
-        {loading ? <tr><td colSpan={7} className="px-4 py-14 text-center text-muted-foreground">Loading accounts...</td></tr> : accounts.length === 0 ? <tr><td colSpan={7} className="px-4 py-14 text-center text-muted-foreground">No accounts found.</td></tr> : accounts.map((account) => <tr key={account._id} className="hover:bg-muted/40"><td className="px-4 py-3"><p className="font-medium">{nameOf(account)}</p><Badge tone={account.isVerified ? "success" : "warning"}>{account.isVerified ? "Verified" : "Unverified"}</Badge></td><td className="px-4 py-3">{account.mobile}</td><td className="px-4 py-3 text-muted-foreground">{locationOf(account)}</td><td className="px-4 py-3 text-muted-foreground">{role === "B2B" ? `${account.categories?.length || 0} categories, ${account.dealerBrands?.length || 0} companies` : role === "COMPANY" ? "View catalogue" : "Farmer"}</td><td className="px-4 py-3"><StatusBadge status={account.isActive === false ? "inactive" : "active"} /></td><td className="px-4 py-3 text-muted-foreground">{new Date(account.createdAt).toLocaleDateString()}</td><td className="px-4 py-3 text-right"><div className="flex justify-end"><RowActions menuClassName="!bg-white shadow-xl" onView={() => navigate(`${meta.path}/${account._id}`)} extra={[{ label: changingId === account._id ? "Saving..." : account.isActive === false ? "Activate" : "Deactivate", icon: account.isActive === false ? <Power className="h-3.5 w-3.5" /> : <PowerOff className="h-3.5 w-3.5" />, danger: account.isActive !== false, onClick: () => { if (changingId !== account._id) void toggleStatus(account); } }]} /></div></td></tr>)}
+        {loading ? <tr><td colSpan={7} className="px-4 py-14 text-center text-muted-foreground">Loading accounts...</td></tr> : accounts.length === 0 ? <tr><td colSpan={7} className="px-4 py-14 text-center text-muted-foreground">No accounts found.</td></tr> : accounts.map((account) => <tr key={account._id} className="hover:bg-muted/40"><td className="px-4 py-3"><p className="font-medium">{nameOf(account)}</p><Badge tone={account.isVerified ? "success" : "warning"}>{account.isVerified ? "Verified" : "Unverified"}</Badge></td><td className="px-4 py-3">{account.mobile}</td><td className="px-4 py-3 text-muted-foreground">{locationOf(account)}</td><td className="px-4 py-3 text-muted-foreground">{role === "B2B" ? `${account.categories?.length || 0} categories, ${account.dealerBrands?.length || 0} companies` : role === "COMPANY" ? "View catalogue" : "Farmer"}</td><td className="px-4 py-3"><StatusBadge status={account.isActive === false ? "inactive" : "active"} /></td><td className="px-4 py-3 text-muted-foreground">{new Date(account.createdAt).toLocaleDateString()}</td><td className="px-4 py-3 text-right"><div className="flex justify-end"><RowActions menuClassName="!bg-white shadow-xl" onView={() => navigate(`${meta.path}/${account._id}`)} onDelete={() => { if (changingId !== account._id) setPendingDelete(account); }} extra={[{ label: changingId === account._id ? "Saving..." : account.isActive === false ? "Activate" : "Deactivate", icon: account.isActive === false ? <Power className="h-3.5 w-3.5" /> : <PowerOff className="h-3.5 w-3.5" />, danger: account.isActive !== false, onClick: () => { if (changingId !== account._id) void toggleStatus(account); } }]} /></div></td></tr>)}
       </tbody></table></div>
       {!loading && total > 0 ? <div className="flex items-center justify-between border-t border-border px-4 py-3"><span className="text-xs text-muted-foreground">{total} accounts</span><div className="flex items-center gap-2"><Button size="iconSm" variant="secondary" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}><ChevronLeft className="h-4 w-4" /></Button><span className="text-xs text-muted-foreground">Page {page} of {totalPages}</span><Button size="iconSm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}><ChevronRight className="h-4 w-4" /></Button></div></div> : null}
     </div>
+    <ConfirmDialog open={Boolean(pendingDelete)} onClose={() => setPendingDelete(null)} onConfirm={() => void removeAccount()} title="Delete account" message={`${pendingDelete ? nameOf(pendingDelete) : "This account"} and its products will be permanently deleted. This cannot be undone.`} />
   </>;
 }

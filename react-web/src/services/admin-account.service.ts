@@ -27,3 +27,8 @@ export async function updateAdminAccountStatus(id: string, isActive: boolean) {
   const { data } = await api.patch(`/admin/accounts/${id}/status`, { isActive });
   return data.account as AdminAccount;
 }
+
+export async function deleteAdminAccount(id: string) {
+  const { data } = await api.delete(`/auth/delete-user/${id}`);
+  return data as { message: string };
+}
